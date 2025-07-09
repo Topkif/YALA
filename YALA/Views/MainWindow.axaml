@@ -16,8 +16,10 @@
 		<Border DockPanel.Dock="Top" Background="{DynamicResource PanelBackgroundBrush}" Padding="8">
 			<DockPanel>
 				<Menu DockPanel.Dock="Top">
-					<MenuItem Header="_File">
-						<MenuItem Header="_Open..."/>
+					<MenuItem Header="_Project">
+						<MenuItem Header="_Select classes" Click="OnSelectClassesClick"  />
+						<MenuItem Header="_Create new" Command="{Binding CreateNewCommand}"/>
+						<MenuItem Header="_Open"/>
 						<Separator/>
 						<MenuItem Header="_Exit"/>
 					</MenuItem>
@@ -145,11 +147,17 @@
 							<StackPanel Spacing="8">
 								<TextBlock Text="Classes" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ForegroundBrush}"/>
 								<StackPanel Spacing="5">
-									<DockPanel>
-										<Rectangle DockPanel.Dock="Left" Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
-										<RadioButton DockPanel.Dock="Right"/>
-										<TextBlock Text="Person" VerticalAlignment="Center" Foreground="{DynamicResource ForegroundBrush}"/>
-									</DockPanel>
+									<ItemsControl ItemsSource="{Binding Classes}">
+										<ItemsControl.ItemTemplate>
+											<DataTemplate>
+												<DockPanel>
+													<Rectangle DockPanel.Dock="Left" Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
+													<RadioButton DockPanel.Dock="Right" GroupName="ClassGroup"/>
+													<TextBlock Text="{Binding}" VerticalAlignment="Center" Foreground="{DynamicResource ForegroundBrush}"/>
+												</DockPanel>
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
 								</StackPanel>
 							</StackPanel>
 						</Border>
