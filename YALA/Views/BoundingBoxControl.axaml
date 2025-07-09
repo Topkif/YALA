@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:YALA.ViewModels"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="YALA.BoundingBoxControl"
+			 x:DataType="vm:UiBoundingBoxViewModel">
+	<Canvas>
+		<Border
+			Canvas.Left="{Binding X}"
+			Canvas.Top="{Binding Y}"
+			Width="{Binding Width}"
+			Height="{Binding Height}"
+			BorderBrush="Red"
+			BorderThickness="2"
+			Background="Transparent">
+			<Canvas>
+				<!-- Resize handle: bottom right -->
+				<Thumb Width="10" Height="10"
+					   Cursor="SizeNWSE"
+					   Canvas.Left="{Binding Width, Converter={StaticResource OffsetConverter}}"
+					   Canvas.Top="{Binding Height, Converter={StaticResource OffsetConverter}}"
+					   />
+			</Canvas>
+		</Border>
+	</Canvas>
+</UserControl>
