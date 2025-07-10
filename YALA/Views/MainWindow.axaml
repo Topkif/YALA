@@ -17,11 +17,10 @@
 			<Grid ColumnDefinitions="*,Auto,*" >
 				<Menu>
 					<MenuItem Header="_Project">
-						<MenuItem Header="_Select classes" Click="OnSelectClassesClick"/>
-						<MenuItem Header="_Create new" Command="{Binding CreateNewCommand}"/>
-						<MenuItem Header="_Open"/>
+						<MenuItem Header="_Create new" Click="OnCreateNewProjectClick"/>
+						<MenuItem Header="_Open existing" Click="OnOpenExistingProjectClick"/>
 						<Separator/>
-						<MenuItem Header="_Exit"/>
+						<MenuItem Header="_Close current" Command="{Binding CloseCurrentProjectCommand}"/>
 					</MenuItem>
 					<MenuItem Header="_Inference">
 						<MenuItem Header="_Open YOLO .pt"/>

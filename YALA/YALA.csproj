@@ -23,6 +23,8 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Lucide.Avalonia" Version="0.1.36" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0-preview.5.25277.114" />
   </ItemGroup>
 </Project>

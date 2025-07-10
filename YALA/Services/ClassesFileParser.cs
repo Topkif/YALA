@@ -10,9 +10,9 @@ namespace YALA.Services;
 
 static class ClassesFileParser
 {
-	public static ObservableCollection<string> ParseClassNames(string filePath)
+	public static List<string> ParseClassNames(string filePath)
 	{
-		var classNames = new ObservableCollection<string>();
+		var classNames = new List<string>();
 		if (!File.Exists(filePath))
 			return classNames;
 

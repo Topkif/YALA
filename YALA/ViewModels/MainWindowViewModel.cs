@@ -9,52 +9,55 @@ using YALA.Services;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using System.Collections.ObjectModel;
+using YALA.Models;
+using Avalonia.Controls.Shapes;
 
 namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
-	[ObservableProperty]
-	ObservableCollection<String> classes=  new();
+	[ObservableProperty] ObservableCollection<string> classes = new();
+	[ObservableProperty] public int numberOfImages;
+	//[ObservableProperty] LabelingDatabase labelingDatabase = new();
 
+	DatabaseService databaseService = new();
 	public MainWindowViewModel()
 	{
+		//databaseService = new(labelingDatabase);
 	}
 
-
 	[RelayCommand]
-	private async Task SelectClasses(Window window)
+	private void CreateNewProject((string dbPath, string classesPath) paths)
 	{
-		var options = new FilePickerOpenOptions
+		if (databaseService.TablesExist(paths.dbPath))
 		{
-			AllowMultiple = false,
-			FileTypeFilter = new[]
-			{
-			new FilePickerFileType("Class Files")
-			{
-				Patterns = new[] { "*.txt", "*.names", "*" }
-			}
+			databaseService.Open(paths.dbPath);
 		}
-		};
-
-		var files = await window.StorageProvider.OpenFilePickerAsync(options);
-		if (files != null && files.Count > 0)
+		else
 		{
-			var path = files[0].Path.LocalPath;
-			Classes = ClassesFileParser.ParseClassNames(path);
+			databaseService.Initialize(paths.dbPath);
+			List<string> classes = ClassesFileParser.ParseClassNames(paths.classesPath);
+			databaseService.AddClasses(classes);
 		}
-	}
-
-
-
-	[RelayCommand]
-	private void CreateNew()
-	{
-
+		Classes = databaseService.GetClassNames();
 	}
 
 	[RelayCommand]
-	private void Open()
+	private void OpenExistingProject(string path)
 	{
-		// Your open logic here
+		if (databaseService.TablesExist(path))
+		{
+			databaseService.Open(path);
+		}
+		else
+		{
+			databaseService.Initialize(path);
+		}
+		Classes = databaseService.GetClassNames();
+	}
+
+	[RelayCommand]
+	private void CloseCurrentProject()
+	{
+		databaseService.Close();
 	}
 }
