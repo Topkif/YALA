@@ -11,13 +11,13 @@
         Title="YALA"
         Background="{DynamicResource BackgroundBrush}">
 
-
-	<DockPanel>
-		<Border DockPanel.Dock="Top" Background="{DynamicResource PanelBackgroundBrush}" Padding="8">
-			<DockPanel>
-				<Menu DockPanel.Dock="Top">
+	<Grid RowDefinitions="Auto,*">
+		<!-- Top Menu Bar And Controls-->
+		<Border Background="{DynamicResource MenuBackGroundBrush}" Padding="0,0,0,10">
+			<Grid ColumnDefinitions="*,Auto,*" >
+				<Menu>
 					<MenuItem Header="_Project">
-						<MenuItem Header="_Select classes" Click="OnSelectClassesClick"  />
+						<MenuItem Header="_Select classes" Click="OnSelectClassesClick"/>
 						<MenuItem Header="_Create new" Command="{Binding CreateNewCommand}"/>
 						<MenuItem Header="_Open"/>
 						<Separator/>
@@ -33,111 +33,54 @@
 					</MenuItem>
 				</Menu>
 
-				<StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="5">
-					<Button Width="32" Height="32" ToolTip.Tip="Previous Image" Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
-						<Viewbox Width="25" Height="2250" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
-							<lucide:LucideIcon Kind="ChevronLeft"/>
-						</Viewbox>
-					</Button>
-
-					<Button Width="32" Height="32" ToolTip.Tip="Next Image" Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
-						<Viewbox Width="25" Height="25" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
-							<lucide:LucideIcon Kind="ChevronRight"/>
-						</Viewbox>
-					</Button>
-
-					<Button Width="32" Height="32" ToolTip.Tip="Pan Tool" Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
-						<Viewbox Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
-							<lucide:LucideIcon Kind="Hand"/>
-						</Viewbox>
-					</Button>
-
-					<Button Width="32" Height="32" ToolTip.Tip="Rectangle Tool" Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
-						<Viewbox Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
-							<lucide:LucideIcon Kind="Square"/>
-						</Viewbox>
-					</Button>
-
-					<Button Width="32" Height="32" ToolTip.Tip="Auto Detect" Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
-						<Viewbox Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
-							<lucide:LucideIcon Kind="WandSparkles"/>
-						</Viewbox>
-					</Button>
-
+				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft"/>
+					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight"/>
+					<Button Classes="icon-button" ToolTip.Tip="Pan Tool" Content="Hand"/>
+					<Button Classes="icon-button" ToolTip.Tip="Rectangle Tool" Content="Square"/>
+					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
 				</StackPanel>
-			</DockPanel>
+			</Grid>
 		</Border>
 
-		<Grid>
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="5"/>
-				<ColumnDefinition Width="300" MinWidth="250"/>
-			</Grid.ColumnDefinitions>
-
-			<Border Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}">
-				<Grid>
-					<Viewbox>
-						<Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource ForegroundBrush}" BorderThickness="1" Width="800" Height="600">
-							<TextBlock Text="Image will be displayed here"
-									   HorizontalAlignment="Center"
-									   VerticalAlignment="Center"
-									   FontSize="16"
-									   Foreground="{DynamicResource ForegroundBrush}"/>
-						</Border>
-					</Viewbox>
-
+		<!-- Main Content -->
+		<Grid Grid.Row="1" ColumnDefinitions="*,300" MinWidth="250">
+			<!-- Image Display Area -->
+			<Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource ForegroundBrush}" BorderThickness="2">
 					<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-						<lucide:LucideIcon Kind="Image" Width="64" Height="64" Margin="0,0,0,16" Foreground="{DynamicResource ForegroundBrush}"/>
-						<TextBlock Text="No image loaded" FontSize="16" HorizontalAlignment="Center" Foreground="{DynamicResource ForegroundBrush}"/>
+						<TextBlock Text="No Image Loaded" FontSize="16"/>
+						<lucide:LucideIcon Kind="Image"/>
 					</StackPanel>
-				</Grid>
 			</Border>
 
-			<GridSplitter Grid.Column="1" Background="{DynamicResource ForegroundBrush}"/>
-
-			<Border Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" Padding="10">
-				<ScrollViewer>
-					<StackPanel Spacing="15">
-
+			<!-- Side Panel -->
+				<ScrollViewer Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" Padding="5,0,5,0">
+					<StackPanel Spacing="10">
 						<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
 							<StackPanel Spacing="5">
-								<TextBlock Text="Image Information" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ForegroundBrush}"/>
-								<TextBlock Text="Size: 1920 x 1080" Foreground="{DynamicResource ForegroundBrush}"/>
-								<TextBlock Text="Current: 1 / 45" Foreground="{DynamicResource ForegroundBrush}"/>
-								<TextBlock Text="File: image_001.jpg" Foreground="{DynamicResource ForegroundBrush}"/>
+								<TextBlock Text="Image Information" FontWeight="Bold" FontSize="14"/>
+								<TextBlock Text="Size: 1920 x 1080"/>
+								<TextBlock Text="Current: 1 / 45"/>
+								<TextBlock Text="File: image_001.jpg"/>
 							</StackPanel>
 						</Border>
 
 						<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
 							<StackPanel Spacing="8">
-								<DockPanel>
-									<TextBlock DockPanel.Dock="Left" Text="Annotations" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ForegroundBrush}"/>
-								</DockPanel>
-
+								<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
 								<StackPanel Spacing="5">
 									<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="3">
-										<DockPanel>
-											<Rectangle DockPanel.Dock="Left" Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
-											<StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="3">
-												<Button Width="30" Height="30" Padding="0" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
-													<Viewbox Stretch="Uniform" Width="20" Height="20">
-														<lucide:LucideIcon Kind="Pencil" />
-													</Viewbox>
-												</Button>
-
-												<Button Width="30" Height="30" Padding="0" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
-													<Viewbox Stretch="Uniform" Width="20" Height="20">
-														<lucide:LucideIcon Kind="Trash2" />
-													</Viewbox>
-												</Button>
-
+										<Grid ColumnDefinitions="Auto,*,Auto">
+											<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
+											<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
+												<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Pencil"/>
+												<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Trash2"/>
 											</StackPanel>
-											<StackPanel>
-												<TextBlock Text="Person" FontWeight="Medium" FontSize="12" Foreground="{DynamicResource ForegroundBrush}"/>
-												<TextBlock Text="(120, 45) 200×180" FontSize="10" Foreground="Gray"/>
+											<StackPanel Grid.Column="1">
+												<TextBlock Text="Person" FontWeight="Medium" FontSize="12"/>
+												<TextBlock Text="(120, 45) 200Ã—180" FontSize="10" Foreground="Gray"/>
 											</StackPanel>
-										</DockPanel>
+										</Grid>
 									</Border>
 								</StackPanel>
 							</StackPanel>
@@ -145,26 +88,24 @@
 
 						<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
 							<StackPanel Spacing="8">
-								<TextBlock Text="Classes" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ForegroundBrush}"/>
+								<TextBlock Text="Classes" FontWeight="Bold" FontSize="14"/>
 								<StackPanel Spacing="5">
 									<ItemsControl ItemsSource="{Binding Classes}">
 										<ItemsControl.ItemTemplate>
 											<DataTemplate>
-												<DockPanel>
-													<Rectangle DockPanel.Dock="Left" Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
-													<RadioButton DockPanel.Dock="Right" GroupName="ClassGroup"/>
-													<TextBlock Text="{Binding}" VerticalAlignment="Center" Foreground="{DynamicResource ForegroundBrush}"/>
-												</DockPanel>
+												<Grid ColumnDefinitions="Auto,*,Auto">
+													<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
+													<RadioButton Grid.Column="2" GroupName="ClassGroup"/>
+													<TextBlock Grid.Column="1" Text="{Binding}" VerticalAlignment="Center"/>
+												</Grid>
 											</DataTemplate>
 										</ItemsControl.ItemTemplate>
 									</ItemsControl>
 								</StackPanel>
 							</StackPanel>
 						</Border>
-
 					</StackPanel>
 				</ScrollViewer>
-			</Border>
 		</Grid>
-	</DockPanel>
+	</Grid>
 </Window>
