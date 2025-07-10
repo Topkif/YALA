@@ -11,18 +11,20 @@ using Avalonia.Platform.Storage;
 using System.Collections.ObjectModel;
 using YALA.Models;
 using Avalonia.Controls.Shapes;
+using System.Linq;
 
 namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
-	[ObservableProperty] ObservableCollection<string> classes = new();
+	[ObservableProperty] ObservableCollection<LabelingClass> labelingClasses = new();
 	[ObservableProperty] public int numberOfImages;
 	//[ObservableProperty] LabelingDatabase labelingDatabase = new();
 
 	DatabaseService databaseService = new();
 	public MainWindowViewModel()
 	{
-		//databaseService = new(labelingDatabase);
+		labelingClasses.Add(new LabelingClass{ Id = 0, Name = "robot", Color = "#6eeb83", NumberOfInstances = 11, isSelected = false });
+		labelingClasses.Add(new LabelingClass{ Id = 1, Name = "Ballon", Color = "#3654b3", NumberOfInstances = 2, isSelected = true });
 	}
 
 	[RelayCommand]
@@ -38,7 +40,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			List<string> classes = ClassesFileParser.ParseClassNames(paths.classesPath);
 			databaseService.AddClasses(classes);
 		}
-		Classes = databaseService.GetClassNames();
+		LabelingClasses = databaseService.GetLabellingClasses();
 	}
 
 	[RelayCommand]
@@ -52,12 +54,28 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			databaseService.Initialize(path);
 		}
-		Classes = databaseService.GetClassNames();
+		LabelingClasses = databaseService.GetLabellingClasses();
 	}
 
 	[RelayCommand]
 	private void CloseCurrentProject()
 	{
 		databaseService.Close();
+	}
+
+	[RelayCommand]
+	private void UpdateLabelColor(LabelingClass labelingClass)
+	{
+		databaseService.SetClassColor(labelingClass.Name, labelingClass.Color);
+	}
+
+	[RelayCommand]
+	private void SetSelectedLabel(LabelingClass labelingClass)
+	{
+		foreach (var label in LabelingClasses)
+		{
+			label.isSelected = false;
+		}
+		labelingClass.isSelected = true;
 	}
 }

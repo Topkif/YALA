@@ -1,6 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using System;
+using YALA.Models;
 using YALA.ViewModels;
 
 namespace YALA.Views;
@@ -79,4 +82,26 @@ public partial class MainWindow : Window
 		}
 	}
 
+	private void OnColorChanged(object sender, ColorChangedEventArgs e)
+	{
+		if (sender is ColorPicker picker && picker.DataContext is LabelingClass selectedClass)
+		{
+			var hexColor = e.NewColor.ToString(); // format: "#RRGGBBAA"
+			selectedClass.Color = hexColor;
+
+			if (DataContext is not MainWindowViewModel viewModel)
+				return;
+			viewModel.UpdateLabelColorCommand.Execute(selectedClass);
+		}
+	}
+
+	private void OnClassChecked(object sender, RoutedEventArgs e)
+	{
+		if (sender is RadioButton rb && rb.DataContext is LabelingClass selectedClass)
+		{
+			if (DataContext is not MainWindowViewModel viewModel)
+				return;
+			viewModel.SetSelectedLabelCommand.Execute(selectedClass);
+		}
+	}
 }

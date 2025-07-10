@@ -7,9 +7,16 @@
         x:Class="YALA.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
+		xmlns:conv="using:YALA.Converters"
         xmlns:lucide="clr-namespace:Lucide.Avalonia;assembly=Lucide.Avalonia"
+		xmlns:views="clr-namespace=YALA.Views;assembly=YALA"
+		xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ColorPicker"
         Title="YALA"
         Background="{DynamicResource BackgroundBrush}">
+
+	<Window.Resources>
+		<conv:HexToColorConverter x:Key="HexToColorConverter"/>
+	</Window.Resources>
 
 	<Grid RowDefinitions="Auto,*">
 		<!-- Top Menu Bar And Controls-->
@@ -46,65 +53,78 @@
 		<Grid Grid.Row="1" ColumnDefinitions="*,300" MinWidth="250">
 			<!-- Image Display Area -->
 			<Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource ForegroundBrush}" BorderThickness="2">
-					<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-						<TextBlock Text="No Image Loaded" FontSize="16"/>
-						<lucide:LucideIcon Kind="Image"/>
-					</StackPanel>
+				<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+					<TextBlock Text="No Image Loaded" FontSize="16"/>
+					<lucide:LucideIcon Kind="Image"/>
+				</StackPanel>
 			</Border>
 
 			<!-- Side Panel -->
-				<ScrollViewer Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" Padding="5,0,5,0">
-					<StackPanel Spacing="10">
-						<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
+			<ScrollViewer Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" Padding="5,0,5,0">
+				<StackPanel Spacing="10">
+					<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
+						<StackPanel Spacing="5">
+							<TextBlock Text="Image Information" FontWeight="Bold" FontSize="14"/>
+							<TextBlock Text="Size: 1920 x 1080"/>
+							<TextBlock Text="Current: 1 / 45"/>
+							<TextBlock Text="File: image_001.jpg"/>
+						</StackPanel>
+					</Border>
+
+					<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
+						<StackPanel Spacing="8">
+							<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
 							<StackPanel Spacing="5">
-								<TextBlock Text="Image Information" FontWeight="Bold" FontSize="14"/>
-								<TextBlock Text="Size: 1920 x 1080"/>
-								<TextBlock Text="Current: 1 / 45"/>
-								<TextBlock Text="File: image_001.jpg"/>
+								<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="3">
+									<Grid ColumnDefinitions="Auto,*,Auto">
+										<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
+										<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
+											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Pencil"/>
+											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Trash2"/>
+										</StackPanel>
+										<StackPanel Grid.Column="1">
+											<TextBlock Text="Person" FontWeight="Medium" FontSize="12"/>
+											<TextBlock Text="(120, 45) 200×180" FontSize="10" Foreground="Gray"/>
+										</StackPanel>
+									</Grid>
+								</Border>
 							</StackPanel>
-						</Border>
+						</StackPanel>
+					</Border>
 
-						<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
-							<StackPanel Spacing="8">
-								<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
-								<StackPanel Spacing="5">
-									<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="3">
-										<Grid ColumnDefinitions="Auto,*,Auto">
-											<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
-											<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
-												<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Pencil"/>
-												<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Trash2"/>
-											</StackPanel>
-											<StackPanel Grid.Column="1">
-												<TextBlock Text="Person" FontWeight="Medium" FontSize="12"/>
-												<TextBlock Text="(120, 45) 200×180" FontSize="10" Foreground="Gray"/>
-											</StackPanel>
-										</Grid>
-									</Border>
-								</StackPanel>
+					<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
+						<StackPanel Spacing="8">
+							<TextBlock Text="Classes" FontWeight="Bold" FontSize="14"/>
+							<StackPanel Spacing="5">
+								<ItemsControl ItemsSource="{Binding LabelingClasses}">
+									<ItemsControl.ItemTemplate>
+										<DataTemplate>
+											<Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
+												<RadioButton Grid.Column="0" IsChecked="{Binding isSelected}" Checked="OnClassChecked"/>
+												<TextBlock Grid.Column="1" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
+												<TextBlock Grid.Column="2" Margin="4,0" VerticalAlignment="Center">
+													<Run Text="(Id: "/>
+													<Run Text="{Binding Id}"/>
+													<Run Text=", Instances: "/>
+													<Run Text="{Binding NumberOfInstances}"/>
+													<Run Text=")"/>
+												</TextBlock>
+												<controls:ColorPicker Grid.Column="3" x:Name="DialogColorPicker"
+																	  Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
+																	  HorizontalAlignment="Stretch"
+																	  IsAlphaEnabled="False"
+																	  IsAlphaVisible="False"
+																	  VerticalAlignment="Stretch"
+																	  ColorChanged="OnColorChanged"/>	
+											</Grid>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
 							</StackPanel>
-						</Border>
-
-						<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
-							<StackPanel Spacing="8">
-								<TextBlock Text="Classes" FontWeight="Bold" FontSize="14"/>
-								<StackPanel Spacing="5">
-									<ItemsControl ItemsSource="{Binding Classes}">
-										<ItemsControl.ItemTemplate>
-											<DataTemplate>
-												<Grid ColumnDefinitions="Auto,*,Auto">
-													<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
-													<RadioButton Grid.Column="2" GroupName="ClassGroup"/>
-													<TextBlock Grid.Column="1" Text="{Binding}" VerticalAlignment="Center"/>
-												</Grid>
-											</DataTemplate>
-										</ItemsControl.ItemTemplate>
-									</ItemsControl>
-								</StackPanel>
-							</StackPanel>
-						</Border>
-					</StackPanel>
-				</ScrollViewer>
+						</StackPanel>
+					</Border>
+				</StackPanel>
+			</ScrollViewer>
 		</Grid>
 	</Grid>
 </Window>

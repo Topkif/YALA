@@ -33,7 +33,7 @@ public class DatabaseService
 
             CREATE TABLE IF NOT EXISTS Classes (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name TEXT NOT NULL,
+                Name TEXT NOT NULL UNIQUE,
                 Color TEXT
             );
 
@@ -82,15 +82,35 @@ public class DatabaseService
 		transaction?.Commit();
 	}
 
-	public ObservableCollection<string> GetClassNames()
+	public void SetClassColor(string className, string colorHex)
 	{
-		var classNames = connection?.Query<string>("SELECT Name FROM Classes").ToList();
-		if (classNames != null)
-		{
-			return new ObservableCollection<string>(classNames);
-		}
-		return new ObservableCollection<string>();
+		var sql = "UPDATE Classes SET Color = @colorHex WHERE Name = @className;";
+
+		using var transaction = connection?.BeginTransaction();
+		connection?.Execute(sql, new { colorHex = colorHex, className = className }, transaction);
+		transaction?.Commit();
 	}
+
+	public string GetClassColor(string className)
+	{
+		var colorHex = connection?.QuerySingleOrDefault<string>(
+			"SELECT Color FROM Classes WHERE Name = @className",
+			new { className });
+
+		return colorHex ?? string.Empty;
+	}
+
+
+	public ObservableCollection<LabelingClass> GetLabellingClasses()
+	{
+		var labellingClasses = connection?.Query<LabelingClass>("SELECT Id, Name, Color FROM Classes").ToList();
+		if (labellingClasses != null)
+		{
+			return new ObservableCollection<LabelingClass>(labellingClasses);
+		}
+		return new ObservableCollection<LabelingClass>();
+	}
+
 
 	public void Close()
 	{
