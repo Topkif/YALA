@@ -1,8 +1,11 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using YALA.Models;
 using YALA.ViewModels;
 
@@ -12,6 +15,15 @@ public partial class MainWindow : Window
 	public MainWindow()
 	{
 		InitializeComponent();
+		this.Opened += (_, _) => MainFocusTarget.Focus();
+		var tb = this.FindControl<TextBox>("ImageIndexTextBox");
+		tb.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
+	}
+
+	private static void OnTextInput(object? sender, TextInputEventArgs e)
+	{
+		if (!int.TryParse(e.Text, out _))
+			e.Handled = true;
 	}
 
 	private async void OnCreateNewProjectClick(object sender, RoutedEventArgs e)
@@ -104,4 +116,66 @@ public partial class MainWindow : Window
 			viewModel.SetSelectedLabelCommand.Execute(selectedClass);
 		}
 	}
+
+	private async void OnAddImagesClicked(object sender, RoutedEventArgs e)
+	{
+		if (DataContext is not MainWindowViewModel viewModel)
+			return;
+
+		var topLevel = GetTopLevel(this);
+		if (topLevel == null)
+			return;
+
+		var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+		{
+			Title = "Select Images or Folder",
+			AllowMultiple = true,
+			FileTypeFilter = new[]
+			{
+			new FilePickerFileType("Images") { Patterns = new[] { "*.png", "*.jpg", "*.jpeg" } }
+		}
+		});
+
+		if (files?.Count > 0)
+		{
+			List<string> imagePaths = files.Select(f => f.Path.LocalPath).ToList();
+			viewModel.AddImagesCommand.Execute(imagePaths);
+		}
+	}
+
+	private void OnKeyDown(object? sender, KeyEventArgs e)
+	{
+		if (DataContext is not MainWindowViewModel viewModel)
+			return;
+
+		if (e.Key == Key.Left)
+		{
+			viewModel.PreviousImageCommand.Execute(null);
+			e.Handled = true;
+		}
+		else if (e.Key == Key.Right)
+		{
+			viewModel.NextImageCommand.Execute(null);
+			e.Handled = true;
+		}
+	}
+	private void OnMenuKeyDown(object? sender, KeyEventArgs e)
+	{
+		e.Handled = true; // Consume all key input
+	}
+
+	private void OnCurrentImageIndexChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+	{
+		if (DataContext is not MainWindowViewModel viewModel)
+			return;
+
+		if (sender is TextBox textBox)
+		{
+			if (int.TryParse(textBox.Text, out int index))
+			{
+				viewModel.GotoImageCommand.Execute(index);
+			}
+		}
+	}
+
 }

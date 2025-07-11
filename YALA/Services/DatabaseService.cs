@@ -13,17 +13,14 @@ namespace YALA.Services;
 
 public class DatabaseService
 {
-	IDbConnection? connection;
-	//LabelingDatabase LabelingDatabase;
-	//public DatabaseService(LabelingDatabase labelingDatabase) 
-	//{ 
-	//    LabelingDatabase = labelingDatabase;
-	//}
-
+	public IDbConnection? connection;
+	public string absolutePath = "";
+	
 	public void Initialize(string dbPath)
 	{
 		connection = new SqliteConnection($"Data Source={dbPath}");
 		connection.Open();
+		absolutePath = dbPath;
 
 		connection.Execute(@"
             CREATE TABLE IF NOT EXISTS Images (
@@ -68,6 +65,12 @@ public class DatabaseService
 	{
 		connection = new SqliteConnection($"Data Source={dbPath}");
 		connection.Open();
+		absolutePath = dbPath;
+	}
+
+	public void Close()
+	{
+		connection?.Close();
 	}
 
 	public void AddClasses(List<string> classes)
@@ -111,9 +114,25 @@ public class DatabaseService
 		return new ObservableCollection<LabelingClass>();
 	}
 
-
-	public void Close()
+	public void AddImages(List<string> imagesPaths)
 	{
-		connection?.Close();
+		var sql = "INSERT INTO Images (Path) VALUES (@Path);";
+
+		using var transaction = connection?.BeginTransaction();
+		foreach (var imagePath in imagesPaths)
+		{
+			connection?.Execute(sql, new { Path = imagePath }, transaction);
+		}
+		transaction?.Commit();
 	}
+	public ObservableCollection<string> GetImagesPaths()
+	{
+		var imagesPaths = connection?.Query<string>("SELECT Path FROM Images").ToList();
+		if (imagesPaths != null)
+		{
+			return new ObservableCollection<string>(imagesPaths);
+		}
+		return new ObservableCollection<string>();
+	}
+
 }

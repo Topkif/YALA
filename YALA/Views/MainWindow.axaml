@@ -10,38 +10,42 @@
 		xmlns:conv="using:YALA.Converters"
         xmlns:lucide="clr-namespace:Lucide.Avalonia;assembly=Lucide.Avalonia"
 		xmlns:views="clr-namespace=YALA.Views;assembly=YALA"
-		xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ColorPicker"
+		xmlns:cp="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ColorPicker"
+		xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
         Title="YALA"
+		RequestedThemeVariant="Dark"
+		KeyDown="OnKeyDown"
         Background="{DynamicResource BackgroundBrush}">
 
 	<Window.Resources>
 		<conv:HexToColorConverter x:Key="HexToColorConverter"/>
 	</Window.Resources>
 
-	<Grid RowDefinitions="Auto,*">
+	<Grid RowDefinitions="Auto,*, Auto" x:Name="MainFocusTarget" Focusable="True">
 		<!-- Top Menu Bar And Controls-->
 		<Border Background="{DynamicResource MenuBackGroundBrush}" Padding="0,0,0,10">
 			<Grid ColumnDefinitions="*,Auto,*" >
 				<Menu>
-					<MenuItem Header="_Project">
-						<MenuItem Header="_Create new" Click="OnCreateNewProjectClick"/>
-						<MenuItem Header="_Open existing" Click="OnOpenExistingProjectClick"/>
+					<MenuItem Header="Project">
+						<MenuItem Header="Create new" Click="OnCreateNewProjectClick"/>
+						<MenuItem Header="Open existing" Click="OnOpenExistingProjectClick" />
+						<MenuItem Header="Close current" Command="{Binding CloseCurrentProjectCommand}"/>
 						<Separator/>
-						<MenuItem Header="_Close current" Command="{Binding CloseCurrentProjectCommand}"/>
+						<MenuItem Header="Add images" Click="OnAddImagesClicked" />
 					</MenuItem>
-					<MenuItem Header="_Inference">
-						<MenuItem Header="_Open YOLO .pt"/>
-						<MenuItem Header="_Run on all project"/>
+					<MenuItem Header="Inference">
+						<MenuItem Header="Open YOLO .pt"/>
+						<MenuItem Header="Run on all project"/>
 					</MenuItem>
-					<MenuItem Header="_Edit">
+					<MenuItem Header="Edit">
 						<MenuItem Header="Copy"/>
-						<MenuItem Header="Paste"/>
+						<MenuItem Header="Paste" />
 					</MenuItem>
 				</Menu>
 
 				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
-					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft"/>
-					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight"/>
+					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
+					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Pan Tool" Content="Hand"/>
 					<Button Classes="icon-button" ToolTip.Tip="Rectangle Tool" Content="Square"/>
 					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
@@ -50,81 +54,118 @@
 		</Border>
 
 		<!-- Main Content -->
-		<Grid Grid.Row="1" ColumnDefinitions="*,300" MinWidth="250">
+		<Grid Grid.Row="1">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="Auto" MaxWidth="400" />
+			</Grid.ColumnDefinitions>
 			<!-- Image Display Area -->
 			<Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource ForegroundBrush}" BorderThickness="2">
-				<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-					<TextBlock Text="No Image Loaded" FontSize="16"/>
-					<lucide:LucideIcon Kind="Image"/>
-				</StackPanel>
+				<Image Source="{Binding CurrentImageBitmap}" />
 			</Border>
 
 			<!-- Side Panel -->
-			<ScrollViewer Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" Padding="5,0,5,0">
-				<StackPanel Spacing="10">
-					<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
+			<ScrollViewer Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}">
+				<StackPanel Spacing="10" Margin="5">
+					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
 						<StackPanel Spacing="5">
 							<TextBlock Text="Image Information" FontWeight="Bold" FontSize="14"/>
-							<TextBlock Text="Size: 1920 x 1080"/>
-							<TextBlock Text="Current: 1 / 45"/>
-							<TextBlock Text="File: image_001.jpg"/>
-						</StackPanel>
-					</Border>
-
-					<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
-						<StackPanel Spacing="8">
-							<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
-							<StackPanel Spacing="5">
-								<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="3">
-									<Grid ColumnDefinitions="Auto,*,Auto">
-										<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
-										<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
-											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Pencil"/>
-											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Trash2"/>
-										</StackPanel>
-										<StackPanel Grid.Column="1">
-											<TextBlock Text="Person" FontWeight="Medium" FontSize="12"/>
-											<TextBlock Text="(120, 45) 200×180" FontSize="10" Foreground="Gray"/>
-										</StackPanel>
-									</Grid>
-								</Border>
+							<TextBlock>
+								<Run Text="Size: "/>
+								<Run Text="{Binding CurrentImageBitmap.Size.Width}"/>
+								<Run Text=" x "/>
+								<Run Text="{Binding CurrentImageBitmap.Size.Height}"/>
+							</TextBlock>
+							<!--<StackPanel Orientation="Horizontal" Spacing="4">
+								<TextBlock VerticalAlignment="Center" Text="Current: "/>
+								<controls:NumericUpDown
+									Minimum="1"
+									Maximum="{Binding ImagesPaths.Count, Mode=OneWay}"
+									Value="{Binding CurrentImageIndex, Mode=TwoWay}"
+									Width="60"
+									HorizontalAlignment="Left"/>
+								<TextBlock VerticalAlignment="Center" Text="/"/>
+								<TextBlock VerticalAlignment="Center" Text="{Binding ImagesPaths.Count}"/>
+							</StackPanel>-->
+							<StackPanel Orientation="Horizontal" Spacing="4">
+								<TextBlock VerticalAlignment="Center" Text="Current: "/>
+								<TextBox x:Name="ImageIndexTextBox" Width="40"
+										 Text="{Binding CurrentImageIndex}"
+										 HorizontalAlignment="Left"
+										 VerticalContentAlignment="Center"
+										 TextChanged="OnCurrentImageIndexChanged"/>
+								<TextBlock VerticalAlignment="Center" Text="/"/>
+								<TextBlock VerticalAlignment="Center" Text="{Binding ImagesPaths.Count}"/>
 							</StackPanel>
+
+
 						</StackPanel>
 					</Border>
 
-					<Border Background="{DynamicResource BackgroundBrush}" Padding="10" CornerRadius="5">
+					<!--Classes-->
+					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
 						<StackPanel Spacing="8">
 							<TextBlock Text="Classes" FontWeight="Bold" FontSize="14"/>
-							<StackPanel Spacing="5">
+							<StackPanel>
 								<ItemsControl ItemsSource="{Binding LabelingClasses}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<StackPanel Spacing="8"/>
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
 									<ItemsControl.ItemTemplate>
 										<DataTemplate>
-											<Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
-												<RadioButton Grid.Column="0" IsChecked="{Binding isSelected}" Checked="OnClassChecked"/>
-												<TextBlock Grid.Column="1" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
-												<TextBlock Grid.Column="2" Margin="4,0" VerticalAlignment="Center">
-													<Run Text="(Id: "/>
-													<Run Text="{Binding Id}"/>
-													<Run Text=", Instances: "/>
-													<Run Text="{Binding NumberOfInstances}"/>
-													<Run Text=")"/>
-												</TextBlock>
-												<controls:ColorPicker Grid.Column="3" x:Name="DialogColorPicker"
-																	  Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
-																	  HorizontalAlignment="Stretch"
-																	  IsAlphaEnabled="False"
-																	  IsAlphaVisible="False"
-																	  VerticalAlignment="Stretch"
-																	  ColorChanged="OnColorChanged"/>	
-											</Grid>
+											<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="5">
+												<Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
+													<RadioButton Grid.Column="0" IsChecked="{Binding IsSelected}" Checked="OnClassChecked"/>
+													<TextBlock Grid.Column="1" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
+													<TextBlock Grid.Column="2" Margin="4,0" VerticalAlignment="Center">
+														<Run Text="(Id: "/>
+														<Run Text="{Binding Id}"/>
+														<Run Text=", Instances: "/>
+														<Run Text="{Binding NumberOfInstances}"/>
+														<Run Text=")"/>
+													</TextBlock>
+													<cp:ColorPicker Grid.Column="3" x:Name="DialogColorPicker"
+																		  Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
+																		  HorizontalAlignment="Stretch"
+																		  IsAlphaEnabled="False"
+																		  IsAlphaVisible="False"
+																		  VerticalAlignment="Stretch"
+																		  ColorChanged="OnColorChanged"/>
+												</Grid>
+											</Border>
 										</DataTemplate>
 									</ItemsControl.ItemTemplate>
 								</ItemsControl>
 							</StackPanel>
 						</StackPanel>
 					</Border>
+
+					<!--Annotations-->
+					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
+						<StackPanel Spacing="8">
+							<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
+							<StackPanel Spacing="5">
+								<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="5">
+									<Grid ColumnDefinitions="Auto,*,Auto">
+										<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
+										<StackPanel Grid.Column="1">
+											<TextBlock Text="robot" FontWeight="Medium" FontSize="12"/>
+											<TextBlock Text="(120, 45) 200×180" FontSize="10" Foreground="Gray"/>
+										</StackPanel>
+										<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
+											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Pencil"/>
+											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Trash2"/>
+										</StackPanel>
+									</Grid>
+								</Border>
+							</StackPanel>
+						</StackPanel>
+					</Border>
 				</StackPanel>
 			</ScrollViewer>
 		</Grid>
+		<TextBlock Grid.Row="2" Margin="5" Text="{Binding CurrentImageAbsolutePath, StringFormat='File: {0}'}"/>
 	</Grid>
 </Window>

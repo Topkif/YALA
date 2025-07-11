@@ -12,19 +12,24 @@ using System.Collections.ObjectModel;
 using YALA.Models;
 using Avalonia.Controls.Shapes;
 using System.Linq;
+using Avalonia.Media.Imaging;
+using System.Reflection;
 
 namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
 	[ObservableProperty] ObservableCollection<LabelingClass> labelingClasses = new();
-	[ObservableProperty] public int numberOfImages;
-	//[ObservableProperty] LabelingDatabase labelingDatabase = new();
+	[ObservableProperty] ObservableCollection<string> imagesPaths = new();
+	[ObservableProperty] int currentImageIndex = 1;
+	[ObservableProperty] string currentImageAbsolutePath = "";
+	[ObservableProperty] Bitmap currentImageBitmap;
 
 	DatabaseService databaseService = new();
 	public MainWindowViewModel()
 	{
-		labelingClasses.Add(new LabelingClass{ Id = 0, Name = "robot", Color = "#6eeb83", NumberOfInstances = 11, isSelected = false });
-		labelingClasses.Add(new LabelingClass{ Id = 1, Name = "Ballon", Color = "#3654b3", NumberOfInstances = 2, isSelected = true });
+		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+		labelingClasses.Add(new LabelingClass { Id = 0, Name = "robot", Color = "#6eeb83", NumberOfInstances = 11, IsSelected = false });
+		labelingClasses.Add(new LabelingClass { Id = 1, Name = "ballon", Color = "#3654b3", NumberOfInstances = 2, IsSelected = true });
 	}
 
 	[RelayCommand]
@@ -55,6 +60,9 @@ public partial class MainWindowViewModel : ViewModelBase
 			databaseService.Initialize(path);
 		}
 		LabelingClasses = databaseService.GetLabellingClasses();
+		ImagesPaths = databaseService.GetImagesPaths();
+		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 	}
 
 	[RelayCommand]
@@ -74,8 +82,53 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		foreach (var label in LabelingClasses)
 		{
-			label.isSelected = false;
+			label.IsSelected = false;
 		}
-		labelingClass.isSelected = true;
+		labelingClass.IsSelected = true;
+	}
+
+	[RelayCommand]
+	private void AddImages(List<string> imagesPaths)
+	{
+		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
+		{
+			List<string> relativePaths = imagesPaths
+		.Select(path => System.IO.Path.GetRelativePath(databaseService.absolutePath, path))
+		.ToList();
+			databaseService.AddImages(relativePaths);
+			ImagesPaths = databaseService.GetImagesPaths();
+			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+		}
+	}
+
+	[RelayCommand]
+	private void NextImage()
+	{
+		if (ImagesPaths.Count == 0)
+			return;
+		CurrentImageIndex = Math.Min(ImagesPaths.Count, CurrentImageIndex + 1);
+		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
+		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+	}
+
+	[RelayCommand]
+	private void PreviousImage()
+	{
+		if (ImagesPaths.Count == 0)
+			return;
+		CurrentImageIndex = Math.Max(1, CurrentImageIndex - 1);
+		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
+		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+	}
+
+	[RelayCommand]
+	private void GotoImage(int imageId)
+	{
+		if (ImagesPaths.Count == 0)
+			return;
+		var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count); 
+		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]);
+		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 	}
 }

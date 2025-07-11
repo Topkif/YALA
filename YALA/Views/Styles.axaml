@@ -25,6 +25,7 @@
 		</ResourceDictionary>
 	</Styles.Resources>
 
+	
 	<Style Selector="Button.icon-button">
 		<Setter Property="Width" Value="32"/>
 		<Setter Property="Height" Value="32"/>
@@ -37,17 +38,18 @@
 					<Viewbox Width="20" Height="20" Stretch="Uniform">
 						<lucide:LucideIcon Kind="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" />
 					</Viewbox>
-					
 				</Border>
-				
 			</ControlTemplate>
 		</Setter>
-		
 	</Style>
 
 	<Style Selector="Button.icon-button:pointerover">
 		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
 	</Style>
+	
+	<!--<Style Selector="Button.icon-button:pressed">
+		<Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+	</Style>-->
 	
 	
 

@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace YALA.Models;
-public class LabelingClass
+public partial class LabelingClass : ObservableObject
 {
-	public int Id { get; set; }
-	public string Name { get; set; } = string.Empty;
-	public int NumberOfInstances { get; set; }
-	public string Color { get; set; } = string.Empty;
-	public bool isSelected { get; set; } = false;
+	[ObservableProperty] int id;
+	[ObservableProperty] string name = string.Empty;
+	[ObservableProperty] int numberOfInstances;
+	[ObservableProperty] string color = string.Empty;
+	[ObservableProperty] bool isSelected = false;
 }
