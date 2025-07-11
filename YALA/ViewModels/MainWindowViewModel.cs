@@ -19,17 +19,21 @@ namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
 	[ObservableProperty] ObservableCollection<LabelingClass> labelingClasses = new();
+	[ObservableProperty] ObservableCollection<BoundingBox> currentImageBoundingBoxes = new();
 	[ObservableProperty] ObservableCollection<string> imagesPaths = new();
 	[ObservableProperty] int currentImageIndex = 1;
 	[ObservableProperty] string currentImageAbsolutePath = "";
 	[ObservableProperty] Bitmap currentImageBitmap;
 
+
 	DatabaseService databaseService = new();
 	public MainWindowViewModel()
 	{
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
-		labelingClasses.Add(new LabelingClass { Id = 0, Name = "robot", Color = "#6eeb83", NumberOfInstances = 11, IsSelected = false });
-		labelingClasses.Add(new LabelingClass { Id = 1, Name = "ballon", Color = "#3654b3", NumberOfInstances = 2, IsSelected = true });
+		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "robot", Color = "#6eeb83", NumberOfInstances = 11, IsSelected = false });
+		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "ballon", Color = "#3654b3", NumberOfInstances = 2, IsSelected = true });
+		CurrentImageBoundingBoxes.Add(new BoundingBox { XCenter = 500, YCenter = 500, Width = 600, Height = 200, Color = "#FF0000" });
+		CurrentImageBoundingBoxes.Add(new BoundingBox { XCenter = 400, YCenter = 400, Width = 500, Height = 300, Color = "#0000FF" });
 	}
 
 	[RelayCommand]
