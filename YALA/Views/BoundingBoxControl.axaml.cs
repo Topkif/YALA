@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Avalonia.Reactive;
 using Avalonia.VisualTree;
 using System;
@@ -11,30 +12,19 @@ using YALA.Models;
 namespace YALA.Views;
 public partial class BoundingBoxControl : UserControl
 {
-	public static readonly StyledProperty<double> TlxProperty =
-		AvaloniaProperty.Register<BoundingBoxControl, double>(nameof(Tlx));
+	public static readonly StyledProperty<BoundingBox> BoundingBoxProperty =
+		AvaloniaProperty.Register<BoundingBoxControl, BoundingBox>(nameof(BoundingBox));
 
-	public static readonly StyledProperty<double> TlyProperty =
-		AvaloniaProperty.Register<BoundingBoxControl, double>(nameof(Tly));
-
-	public double Tlx
+	public BoundingBox BoundingBox
 	{
-		get => GetValue(TlxProperty);
-		set => SetValue(TlxProperty, value);
-	}
-
-	public double Tly
-	{
-		get => GetValue(TlyProperty);
-		set => SetValue(TlyProperty, value);
+		get => GetValue(BoundingBoxProperty);
+		set => SetValue(BoundingBoxProperty, value);
 	}
 
 	public BoundingBoxControl()
 	{
 		InitializeComponent();
-
-		// Bind Canvas.Left and Canvas.Top to this control’s own Tlx and Tly
-		this.Bind(Canvas.LeftProperty, this.GetObservable(TlxProperty));
-		this.Bind(Canvas.TopProperty, this.GetObservable(TlyProperty));
 	}
 }
+
+

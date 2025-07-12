@@ -13,4 +13,5 @@ public partial class BoundingBox : ObservableObject
 	[ObservableProperty] int width;
 	[ObservableProperty] int height;
 	[ObservableProperty] string color = "#ffffff";
+	[ObservableProperty] int classId;
 }

@@ -21,4 +21,16 @@ public class HexToBrushConverter : IValueConverter
 
 	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
 		throw new NotImplementedException();
+
+	public static IBrush FromHex(string hex)
+	{
+		try
+		{
+			return new SolidColorBrush(Color.Parse(hex));
+		}
+		catch
+		{
+			return Brushes.Transparent;
+		}
+	}
 }

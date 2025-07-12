@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using YALA.Converters;
 using YALA.Models;
 using YALA.ViewModels;
 
@@ -30,19 +32,20 @@ public partial class MainWindow : Window
 	{
 		BoundingBoxesCanvas.Children.Clear();
 
-		foreach (var b in viewModel.CurrentImageBoundingBoxes)
+		foreach (var bbox in viewModel.CurrentImageBoundingBoxes)
 		{
-			var box = new BoundingBoxControl
+			var control = new BoundingBoxControl
 			{
-				Width = b.Width,
-				Height = b.Height,
-				DataContext = b
+				BoundingBox = bbox
 			};
-			Canvas.SetLeft(box, b.Tlx);
-			Canvas.SetTop(box, b.Tly);
-			BoundingBoxesCanvas.Children.Add(box);
+
+			Canvas.SetLeft(control, bbox.Tlx);
+			Canvas.SetTop(control, bbox.Tly);
+
+			BoundingBoxesCanvas.Children.Add(control);
 		}
 	}
+
 
 	private static void OnTextInput(object? sender, TextInputEventArgs e)
 	{
@@ -176,7 +179,7 @@ public partial class MainWindow : Window
 		e.Handled = true; // Consume all key input
 	}
 
-	private void OnCurrentImageIndexChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+	private void OnCurrentImageIndexChanged(object? sender, RoutedEventArgs e)
 	{
 		if (sender is TextBox textBox)
 		{
@@ -184,6 +187,35 @@ public partial class MainWindow : Window
 			{
 				viewModel.GotoImageCommand.Execute(index);
 			}
+		}
+	}
+
+	private void OnImagePointerPressed(object? sender, PointerPressedEventArgs e)
+	{
+		if (viewModel?.CurrentImageBitmap == null || sender is not Image image)
+			return;
+
+		var clickProperties = e.GetCurrentPoint(image).Properties;
+
+		// Get the position of the click relative to the image control
+		var controlPoint = e.GetPosition(image);
+
+		// Convert control point to pixel space of the bitmap
+		var bmpSize = viewModel.CurrentImageBitmap.PixelSize;
+		var imageWidth = image.Bounds.Width;
+		var imageHeight = image.Bounds.Height;
+
+		var scaleX = bmpSize.Width / imageWidth;
+		var scaleY = bmpSize.Height / imageHeight;
+		var imagePoint = new Point(controlPoint.X * scaleX, controlPoint.Y * scaleY);
+
+		if (clickProperties.IsLeftButtonPressed)
+		{
+			//viewModel.OnImageLeftClickedCommand.Execute(imagePoint);
+		}
+		else if (clickProperties.IsRightButtonPressed)
+		{
+			//viewModel.OnImageRightClickedCommand.Execute(imagePoint);
 		}
 	}
 
