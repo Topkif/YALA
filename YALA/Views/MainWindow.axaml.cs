@@ -1,10 +1,13 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using YALA.Models;
 using YALA.ViewModels;
@@ -12,12 +15,33 @@ using YALA.ViewModels;
 namespace YALA.Views;
 public partial class MainWindow : Window
 {
+	private readonly MainWindowViewModel viewModel = App.MainVM;
 	public MainWindow()
 	{
 		InitializeComponent();
+		DataContext = viewModel;
+		viewModel.CurrentImageBoundingBoxes.CollectionChanged += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
+
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		var tb = this.FindControl<TextBox>("ImageIndexTextBox");
 		tb.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
+	}
+	private void UpdateBoundingBoxes()
+	{
+		BoundingBoxesCanvas.Children.Clear();
+
+		foreach (var b in viewModel.CurrentImageBoundingBoxes)
+		{
+			var box = new BoundingBoxControl
+			{
+				Width = b.Width,
+				Height = b.Height,
+				DataContext = b
+			};
+			Canvas.SetLeft(box, b.Tlx);
+			Canvas.SetTop(box, b.Tly);
+			BoundingBoxesCanvas.Children.Add(box);
+		}
 	}
 
 	private static void OnTextInput(object? sender, TextInputEventArgs e)
@@ -28,9 +52,6 @@ public partial class MainWindow : Window
 
 	private async void OnCreateNewProjectClick(object sender, RoutedEventArgs e)
 	{
-		if (DataContext is not MainWindowViewModel viewModel)
-			return;
-
 		var topLevel = GetTopLevel(this);
 		if (topLevel == null)
 			return;
@@ -70,9 +91,6 @@ public partial class MainWindow : Window
 
 	private async void OnOpenExistingProjectClick(object sender, RoutedEventArgs e)
 	{
-		if (DataContext is not MainWindowViewModel viewModel)
-			return;
-
 		var topLevel = GetTopLevel(this);
 		if (topLevel == null)
 			return;
@@ -119,9 +137,6 @@ public partial class MainWindow : Window
 
 	private async void OnAddImagesClicked(object sender, RoutedEventArgs e)
 	{
-		if (DataContext is not MainWindowViewModel viewModel)
-			return;
-
 		var topLevel = GetTopLevel(this);
 		if (topLevel == null)
 			return;
@@ -145,9 +160,6 @@ public partial class MainWindow : Window
 
 	private void OnKeyDown(object? sender, KeyEventArgs e)
 	{
-		if (DataContext is not MainWindowViewModel viewModel)
-			return;
-
 		if (e.Key == Key.Left)
 		{
 			viewModel.PreviousImageCommand.Execute(null);
@@ -166,9 +178,6 @@ public partial class MainWindow : Window
 
 	private void OnCurrentImageIndexChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 	{
-		if (DataContext is not MainWindowViewModel viewModel)
-			return;
-
 		if (sender is TextBox textBox)
 		{
 			if (int.TryParse(textBox.Text, out int index))

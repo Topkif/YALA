@@ -5,43 +5,36 @@ using Avalonia.Reactive;
 using Avalonia.VisualTree;
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using YALA.Models;
 
 namespace YALA.Views;
 public partial class BoundingBoxControl : UserControl
 {
+	public static readonly StyledProperty<double> TlxProperty =
+		AvaloniaProperty.Register<BoundingBoxControl, double>(nameof(Tlx));
+
+	public static readonly StyledProperty<double> TlyProperty =
+		AvaloniaProperty.Register<BoundingBoxControl, double>(nameof(Tly));
+
+	public double Tlx
+	{
+		get => GetValue(TlxProperty);
+		set => SetValue(TlxProperty, value);
+	}
+
+	public double Tly
+	{
+		get => GetValue(TlyProperty);
+		set => SetValue(TlyProperty, value);
+	}
+
 	public BoundingBoxControl()
 	{
 		InitializeComponent();
-		DataContextChanged += OnDataContextChanged;
-	}
 
-	private void OnDataContextChanged(object? sender, EventArgs e)
-	{
-		if (DataContext is BoundingBox box)
-		{
-			// Remove previous handler if exists
-			if (box is INotifyPropertyChanged oldBox)
-				oldBox.PropertyChanged -= OnBoxPropertyChanged;
-
-			// Add new handler
-			box.PropertyChanged += OnBoxPropertyChanged;
-		}
-		UpdatePosition();
-	}
-
-	private void OnBoxPropertyChanged(object? sender, PropertyChangedEventArgs e)
-	{
-		UpdatePosition();
-	}
-
-	private void UpdatePosition()
-	{
-		if (DataContext is BoundingBox box &&
-			this.GetVisualParent() is Canvas canvas)
-		{
-			Canvas.SetLeft(this, box.XCenter - box.Width / 2);
-			Canvas.SetTop(this, box.YCenter - box.Height / 2);
-		}
+		// Bind Canvas.Left and Canvas.Top to this control’s own Tlx and Tly
+		this.Bind(Canvas.LeftProperty, this.GetObservable(TlxProperty));
+		this.Bind(Canvas.TopProperty, this.GetObservable(TlyProperty));
 	}
 }

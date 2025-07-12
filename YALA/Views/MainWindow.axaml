@@ -19,6 +19,8 @@
 
 	<Window.Resources>
 		<conv:HexToColorConverter x:Key="HexToColorConverter"/>
+		<conv:HalfSizeOffsetConverter x:Key="HalfWidthOffsetConverter" />
+		<conv:HalfSizeOffsetConverter x:Key="HalfHeightOffsetConverter" />
 	</Window.Resources>
 
 	<Grid RowDefinitions="Auto,*, Auto" x:Name="MainFocusTarget" Focusable="True">
@@ -59,45 +61,15 @@
 				<ColumnDefinition Width="*"/>
 				<ColumnDefinition Width="Auto" MaxWidth="400" />
 			</Grid.ColumnDefinitions>
+			
 			<!-- Image Display Area -->
-			<!--<Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource ForegroundBrush}" BorderThickness="2">
-				<Canvas>
-					<Image Source="{Binding CurrentImageBitmap}"/>
-					<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
-						<ItemsControl.ItemsPanel>
-							<ItemsPanelTemplate>
-								<Canvas/>
-							</ItemsPanelTemplate>
-						</ItemsControl.ItemsPanel>
-						<ItemsControl.ItemTemplate>
-							<DataTemplate>
-								<views:BoundingBoxControl/>
-							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ItemsControl>
-				</Canvas>
-			</Border>-->
-			<Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource ForegroundBrush}" BorderThickness="2">
+			<Viewbox Stretch="Uniform">
 				<Grid>
-					<Image x:Name="MainImage"
-						   Source="{Binding CurrentImageBitmap}"
-						   Stretch="Uniform"
-						   HorizontalAlignment="Center"
-						   VerticalAlignment="Center"/>
-					<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
-						<ItemsControl.ItemsPanel>
-							<ItemsPanelTemplate>
-								<Canvas IsHitTestVisible="False"/>
-							</ItemsPanelTemplate>
-						</ItemsControl.ItemsPanel>
-						<ItemsControl.ItemTemplate>
-							<DataTemplate>
-								<views:BoundingBoxControl/>
-							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ItemsControl>
+					<Image Source="{Binding CurrentImageBitmap}" />
+					<Canvas x:Name="BoundingBoxesCanvas"
+							IsHitTestVisible="False" />
 				</Grid>
-			</Border>
+			</Viewbox>
 
 
 			<!-- Side Panel -->
@@ -122,8 +94,6 @@
 								<TextBlock VerticalAlignment="Center" Text="/"/>
 								<TextBlock VerticalAlignment="Center" Text="{Binding ImagesPaths.Count}"/>
 							</StackPanel>
-
-
 						</StackPanel>
 					</Border>
 

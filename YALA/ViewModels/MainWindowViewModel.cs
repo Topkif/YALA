@@ -30,10 +30,11 @@ public partial class MainWindowViewModel : ViewModelBase
 	public MainWindowViewModel()
 	{
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
-		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "robot", Color = "#6eeb83", NumberOfInstances = 11, IsSelected = false });
-		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "ballon", Color = "#3654b3", NumberOfInstances = 2, IsSelected = true });
-		CurrentImageBoundingBoxes.Add(new BoundingBox { XCenter = 500, YCenter = 500, Width = 600, Height = 200, Color = "#FF0000" });
-		CurrentImageBoundingBoxes.Add(new BoundingBox { XCenter = 400, YCenter = 400, Width = 500, Height = 300, Color = "#0000FF" });
+		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 23, IsSelected = false });
+		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 45, IsSelected = true });
+		CurrentImageBoundingBoxes.Add(new BoundingBox { Tlx = 110, Tly = 100, Width = 100, Height = 200, Color = "#FF0000" });
+		CurrentImageBoundingBoxes.Add(new BoundingBox { Tlx = 300, Tly = 0, Width = 50, Height = 100, Color = "#0000FF" });
+
 	}
 
 	[RelayCommand]

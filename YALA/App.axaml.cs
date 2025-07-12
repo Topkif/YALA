@@ -11,7 +11,8 @@ namespace YALA
 {
     public partial class App : Application
     {
-        public override void Initialize()
+		public static MainWindowViewModel MainVM { get; } = new();
+		public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
         }
@@ -25,7 +26,7 @@ namespace YALA
                 DisableAvaloniaDataAnnotationValidation();
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(),
+                    DataContext = MainVM,
                 };
             }
 

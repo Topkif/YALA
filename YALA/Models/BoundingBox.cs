@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 namespace YALA.Models;
 public partial class BoundingBox : ObservableObject
 {
-	[ObservableProperty] int xCenter;
-	[ObservableProperty] int yCenter;
+	[ObservableProperty] int tlx; // Top Left X coordinate
+	[ObservableProperty] int tly; // Top Left Y coordinate
 	[ObservableProperty] int width;
 	[ObservableProperty] int height;
 	[ObservableProperty] string color = "#ffffff";

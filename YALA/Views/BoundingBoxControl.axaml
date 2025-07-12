@@ -7,8 +7,9 @@
 			 x:Class="YALA.Views.BoundingBoxControl">
 
 
-	<Rectangle x:Name="BoxRect"
-               Stroke="{Binding Color}"
+	<Rectangle Stroke="{Binding Color}"
+			   Fill="Red"
+               Opacity="0.5"
                StrokeThickness="2"
                Width="{Binding Width}"
                Height="{Binding Height}"/>
