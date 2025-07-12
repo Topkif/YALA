@@ -1,18 +1,43 @@
-<UserControl
-    xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:models="clr-namespace:YALA.Models"
-    xmlns:conv="using:YALA.Converters"
-    xmlns:local="clr-namespace:YALA.Views"
-    x:Class="YALA.Views.BoundingBoxControl">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:YALA.Views"
+             xmlns:conv="using:YALA.Converters"
+             x:Class="YALA.Views.BoundingBoxControl">
 
 	<UserControl.Resources>
 		<conv:HexToBrushConverter x:Key="HexToBrushConverter" />
+		<conv:BoolToIsVisibleConverter x:Key="BoolToIsVisibleConverter" />
+		<conv:AddStrokeConverter x:Key="AddStrokeConverter" />
+		<x:Double x:Key="StrokeSize">2</x:Double>
 	</UserControl.Resources>
 
-	<Rectangle
-        Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-        Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-        Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-        StrokeThickness="2"/>
+	<Grid Margin="2">
+		<!-- Rectangle -->
+		<Rectangle
+			Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"
+			Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"
+			Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+			StrokeThickness="{StaticResource StrokeSize}" />
+
+
+		<!-- Horizontal Top -->
+		<Button Width="20" Height="6" Background="White" BorderBrush="Black" BorderThickness="1" Margin="0,-2,0,0"
+                HorizontalAlignment="Center" VerticalAlignment="Top"
+                IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+
+		<!-- Horizontal Bottom -->
+		<Button Width="20" Height="6" Background="White" BorderBrush="Black" BorderThickness="1" Margin="0,0,0,-2"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+
+		<!-- Vertical Left -->
+		<Button Width="6" Height="20" Background="White" BorderBrush="Black" BorderThickness="1" Margin="-2,0,0,0"
+                HorizontalAlignment="Left" VerticalAlignment="Center"
+                IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+
+		<!-- Vertical Right -->
+		<Button Width="6" Height="20" Background="White" BorderBrush="Black" BorderThickness="1" Margin="0,0,-2,0"
+                HorizontalAlignment="Right" VerticalAlignment="Center"
+                IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+	</Grid>
 </UserControl>

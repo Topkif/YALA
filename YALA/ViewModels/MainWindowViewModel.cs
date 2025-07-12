@@ -33,8 +33,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
 		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 23, IsSelected = false });
 		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 45, IsSelected = true });
-		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 0, Tlx = 110, Tly = 100, Width = 100, Height = 200, Color = "#FF0000" });
-		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 3, Tlx = 300, Tly = 0, Width = 50, Height = 100, Color = "#0000FF" });
+		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 0, Tlx = 110, Tly = 100, Width = 100, Height = 200, Color = "#FF0000", EditingEnabled = true });
+		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 3, Tlx = 300, Tly = 0, Width = 50, Height = 100, Color = "#0000FF", EditingEnabled = false });
 	}
 
 	[RelayCommand]
@@ -130,8 +130,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	[RelayCommand]
 	private void GotoImage(int imageId)
 	{
-		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 1, Tlx = 300, Tly = 350, Width = 600, Height = 200, Color = "#00FF00" });
-
+		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 1, Tlx = 300, Tly = 350, Width = 600, Height = 200, Color = "#00FF00", EditingEnabled = true });
 		if (ImagesPaths.Count == 0)
 			return;
 		var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count); 

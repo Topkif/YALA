@@ -39,8 +39,8 @@ public partial class MainWindow : Window
 				BoundingBox = bbox
 			};
 
-			Canvas.SetLeft(control, bbox.Tlx);
-			Canvas.SetTop(control, bbox.Tly);
+			Canvas.SetLeft(control, bbox.Tlx-2); // Stroke size in View
+			Canvas.SetTop(control, bbox.Tly-2); // Stroke size in View
 
 			BoundingBoxesCanvas.Children.Add(control);
 		}
