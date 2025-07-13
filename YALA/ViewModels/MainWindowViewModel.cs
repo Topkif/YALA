@@ -26,6 +26,10 @@ public partial class MainWindowViewModel : ViewModelBase
 	[ObservableProperty] string currentImageAbsolutePath = "";
 	[ObservableProperty] Bitmap currentImageBitmap;
 
+	// Variables for bounding box resizing
+	BoundingBox resizingBoundingBox = new();
+	ResizeDirection resizeDirection;
+	int resizeLength;
 
 	DatabaseService databaseService = new();
 	public MainWindowViewModel()
@@ -37,24 +41,22 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 3, Tlx = 300, Tly = 0, Width = 50, Height = 100, Color = "#0000FF", EditingEnabled = false });
 	}
 
-	[RelayCommand]
-	private void CreateNewProject((string dbPath, string classesPath) paths)
+	public void CreateNewProject(string dbPath, string classesPath)
 	{
-		if (databaseService.TablesExist(paths.dbPath))
+		if (databaseService.TablesExist(dbPath))
 		{
-			databaseService.Open(paths.dbPath);
+			databaseService.Open(dbPath);
 		}
 		else
 		{
-			databaseService.Initialize(paths.dbPath);
-			List<string> classes = ClassesFileParser.ParseClassNames(paths.classesPath);
+			databaseService.Initialize(dbPath);
+			List<string> classes = ClassesFileParser.ParseClassNames(classesPath);
 			databaseService.AddClasses(classes);
 		}
 		LabelingClasses = databaseService.GetLabellingClasses();
 	}
 
-	[RelayCommand]
-	private void OpenExistingProject(string path)
+	public void OpenExistingProject(string path)
 	{
 		if (databaseService.TablesExist(path))
 		{
@@ -76,14 +78,12 @@ public partial class MainWindowViewModel : ViewModelBase
 		databaseService.Close();
 	}
 
-	[RelayCommand]
-	private void UpdateLabelColor(LabelingClass labelingClass)
+	public void UpdateLabelColor(LabelingClass labelingClass)
 	{
 		databaseService.SetClassColor(labelingClass.Name, labelingClass.Color);
 	}
 
-	[RelayCommand]
-	private void SetSelectedLabel(LabelingClass labelingClass)
+	public void SetSelectedLabel(LabelingClass labelingClass)
 	{
 		foreach (var label in LabelingClasses)
 		{
@@ -92,8 +92,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		labelingClass.IsSelected = true;
 	}
 
-	[RelayCommand]
-	private void AddImages(List<string> imagesPaths)
+	public void AddImages(List<string> imagesPaths)
 	{
 		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
 		{
@@ -127,26 +126,70 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 	}
 
-	[RelayCommand]
-	private void GotoImage(int imageId)
+	public void GotoImage(int imageId)
 	{
 		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 1, Tlx = 300, Tly = 350, Width = 600, Height = 200, Color = "#00FF00", EditingEnabled = true });
 		if (ImagesPaths.Count == 0)
 			return;
-		var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count); 
+		var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count);
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]);
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-	}	
-	
-	[RelayCommand]
-	private void OnImageLeftClicked(Point point)
+	}
+
+	public void OnImageLeftClickedReceived(Point point)
 	{
 		;
 	}
 
-	[RelayCommand]
-	private void OnImageRightClicked(Point point)
+	public void OnImageRightClickedReceived(Point point)
 	{
 		;
+	}
+
+	public void OnThumbDragStarted(BoundingBox resizedBoundingBox, ResizeDirection direction)
+	{
+		resizingBoundingBox = resizedBoundingBox;
+		resizeDirection = direction;
+	}
+
+	public void OnThumbDragDelta(double delta)
+	{
+		resizeLength = (int)delta;
+
+		switch (resizeDirection)
+		{
+			case ResizeDirection.Top:
+				resizingBoundingBox.Tly += resizeLength;
+				resizingBoundingBox.Height -= resizeLength;
+				break;
+
+			case ResizeDirection.Bottom:
+				resizingBoundingBox.Height += resizeLength;
+				break;
+
+			case ResizeDirection.Left:
+				resizingBoundingBox.Tlx += resizeLength;
+				resizingBoundingBox.Width -= resizeLength;
+				break;
+
+			case ResizeDirection.Right:
+				resizingBoundingBox.Width += resizeLength;
+				break;
+
+			default:
+				break;
+		}
+	}
+	public void OnThumbDragCompleted()
+	{
+		if (CurrentImageBoundingBoxes.Remove(resizingBoundingBox))
+		{
+			CurrentImageBoundingBoxes.Add(resizingBoundingBox);
+		}
+	}
+
+	public void DeleteBoundingBox(BoundingBox boundingBox)
+	{
+		CurrentImageBoundingBoxes.Remove(boundingBox);
 	}
 }

@@ -19,6 +19,7 @@
 
 	<Window.Resources>
 		<conv:HexToColorConverter x:Key="HexToColorConverter"/>
+		<conv:HexToBrushConverter x:Key="HexToBrushConverter"/>
 		<conv:HalfSizeOffsetConverter x:Key="HalfWidthOffsetConverter" />
 		<conv:HalfSizeOffsetConverter x:Key="HalfHeightOffsetConverter" />
 	</Window.Resources>
@@ -61,13 +62,12 @@
 				<ColumnDefinition Width="*"/>
 				<ColumnDefinition Width="Auto" MaxWidth="400" />
 			</Grid.ColumnDefinitions>
-			
+
 			<!-- Image Display Area -->
 			<Viewbox Stretch="Uniform">
 				<Grid>
 					<Image Source="{Binding CurrentImageBitmap}" />
-					<Canvas x:Name="BoundingBoxesCanvas"
-							IsHitTestVisible="False" />
+					<Canvas x:Name="BoundingBoxesCanvas"/>
 				</Grid>
 			</Viewbox>
 
@@ -137,27 +137,50 @@
 						</StackPanel>
 					</Border>
 
-					<!--Annotations-->
+					<!-- Annotations -->
 					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
 						<StackPanel Spacing="8">
 							<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
-							<StackPanel Spacing="5">
-								<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="5">
-									<Grid ColumnDefinitions="Auto,*,Auto">
-										<Rectangle Width="16" Height="16" Fill="Red" Margin="0,0,8,0"/>
-										<StackPanel Grid.Column="1">
-											<TextBlock Text="robot" FontWeight="Medium" FontSize="12"/>
-											<TextBlock Text="(120, 45) 200×180" FontSize="10" Foreground="Gray"/>
-										</StackPanel>
-										<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
-											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Pencil"/>
-											<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="Trash2"/>
-										</StackPanel>
-									</Grid>
-								</Border>
-							</StackPanel>
+							<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="5" Margin="0,0,0,4">
+											<Grid ColumnDefinitions="Auto,*,Auto">
+												<Rectangle Width="16" Height="16"
+														   Fill="{Binding Color, Converter={StaticResource HexToBrushConverter}}"
+														   Margin="0,0,8,0"/>
+												<StackPanel Grid.Column="1">
+													<TextBlock Text="{Binding ClassId}" FontWeight="Medium" FontSize="12"/>
+													<TextBlock Text="{Binding Tlx, StringFormat=({0}, }">
+														<TextBlock.Text>
+															<MultiBinding StringFormat="({0}, {1}) {2}×{3}">
+																<Binding Path="Tlx"/>
+																<Binding Path="Tly"/>
+																<Binding Path="Width"/>
+																<Binding Path="Height"/>
+															</MultiBinding>
+														</TextBlock.Text>
+													</TextBlock>
+												</StackPanel>
+												<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
+													<Button Classes="icon-button" ToolTip.Tip="Edit" Content="Pencil"
+															CommandParameter="{Binding}" />
+													<Button Classes="icon-button"
+															ToolTip.Tip="Delete"
+															Content="Trash2"
+															Click="OnDeleteBoundingBoxClicked"
+															Tag="{Binding}" />
+
+												</StackPanel>
+											</Grid>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
 						</StackPanel>
 					</Border>
+
+
 				</StackPanel>
 			</ScrollViewer>
 		</Grid>

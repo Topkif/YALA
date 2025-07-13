@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using YALA.Converters;
 using YALA.Models;
@@ -28,6 +29,7 @@ public partial class MainWindow : Window
 		var tb = this.FindControl<TextBox>("ImageIndexTextBox");
 		tb.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
 	}
+
 	private void UpdateBoundingBoxes()
 	{
 		BoundingBoxesCanvas.Children.Clear();
@@ -42,10 +44,17 @@ public partial class MainWindow : Window
 			Canvas.SetLeft(control, bbox.Tlx-2); // Stroke size in View
 			Canvas.SetTop(control, bbox.Tly-2); // Stroke size in View
 
+			bbox.PropertyChanged += (s, e) =>
+			{
+				if (e.PropertyName is nameof(BoundingBox.Tlx))
+					Canvas.SetLeft(control, bbox.Tlx - 2); // Stroke size
+				else if (e.PropertyName is nameof(BoundingBox.Tly))
+					Canvas.SetTop(control, bbox.Tly - 2); // Stroke size
+			};
+
 			BoundingBoxesCanvas.Children.Add(control);
 		}
 	}
-
 
 	private static void OnTextInput(object? sender, TextInputEventArgs e)
 	{
@@ -87,7 +96,7 @@ public partial class MainWindow : Window
 			{
 				string dbPath = files.Path.LocalPath;
 				string classesPath = classFiles[0].Path.LocalPath;
-				viewModel.CreateNewProjectCommand.Execute((dbPath, classesPath));
+				viewModel.CreateNewProject(dbPath, classesPath);
 			}
 		}
 	}
@@ -111,7 +120,7 @@ public partial class MainWindow : Window
 		if (files?.Count > 0)
 		{
 			string path = files[0].Path.LocalPath;
-			viewModel.OpenExistingProjectCommand.Execute(path);
+			viewModel.OpenExistingProject(path);
 		}
 	}
 
@@ -124,7 +133,7 @@ public partial class MainWindow : Window
 
 			if (DataContext is not MainWindowViewModel viewModel)
 				return;
-			viewModel.UpdateLabelColorCommand.Execute(selectedClass);
+			viewModel.UpdateLabelColor(selectedClass);
 		}
 	}
 
@@ -134,7 +143,7 @@ public partial class MainWindow : Window
 		{
 			if (DataContext is not MainWindowViewModel viewModel)
 				return;
-			viewModel.SetSelectedLabelCommand.Execute(selectedClass);
+			viewModel.SetSelectedLabel(selectedClass);
 		}
 	}
 
@@ -157,7 +166,7 @@ public partial class MainWindow : Window
 		if (files?.Count > 0)
 		{
 			List<string> imagePaths = files.Select(f => f.Path.LocalPath).ToList();
-			viewModel.AddImagesCommand.Execute(imagePaths);
+			viewModel.AddImages(imagePaths);
 		}
 	}
 
@@ -185,7 +194,7 @@ public partial class MainWindow : Window
 		{
 			if (int.TryParse(textBox.Text, out int index))
 			{
-				viewModel.GotoImageCommand.Execute(index);
+				viewModel.GotoImage(index);
 			}
 		}
 	}
@@ -211,12 +220,24 @@ public partial class MainWindow : Window
 
 		if (clickProperties.IsLeftButtonPressed)
 		{
-			//viewModel.OnImageLeftClickedCommand.Execute(imagePoint);
+			viewModel.OnImageLeftClickedReceived(imagePoint);
 		}
 		else if (clickProperties.IsRightButtonPressed)
 		{
-			//viewModel.OnImageRightClickedCommand.Execute(imagePoint);
+			viewModel.OnImageRightClickedReceived(imagePoint);
 		}
 	}
+
+	private void OnDeleteBoundingBoxClicked(object? sender, RoutedEventArgs e)
+	{
+		if (sender is Button button && button.Tag is BoundingBox bbox)
+		{
+			if (DataContext is MainWindowViewModel viewModel)
+			{
+				viewModel.DeleteBoundingBox(bbox);
+			}
+		}
+	}
+
 
 }
