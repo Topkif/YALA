@@ -49,7 +49,6 @@
 				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
 					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
-					<Button Classes="icon-button" ToolTip.Tip="Pan Tool" Content="Hand"/>
 					<Button Classes="icon-button" ToolTip.Tip="Rectangle Tool" Content="Square"/>
 					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
 				</StackPanel>
@@ -64,12 +63,49 @@
 			</Grid.ColumnDefinitions>
 
 			<!-- Image Display Area -->
-			<Viewbox Stretch="Uniform">
-				<Grid>
-					<Image Source="{Binding CurrentImageBitmap}" />
-					<Canvas x:Name="BoundingBoxesCanvas"/>
-				</Grid>
-			</Viewbox>
+			<!--<Grid x:Name="RootGrid"
+				  KeyDown="RootGrid_KeyDown"
+				  KeyUp="RootGrid_KeyUp"
+				  Focusable="True"
+				  PointerWheelChanged="RootGrid_PointerWheelChanged">
+
+					<Grid x:Name="ImageLayer" RenderTransformOrigin="0,0">
+						<Image x:Name="MainImage"
+							   Source="{Binding CurrentImageBitmap}" />
+						<Canvas x:Name="BoundingBoxesCanvas"
+								Background="Transparent"
+								PointerPressed="BoundingBoxesCanvas_PointerPressed"
+								PointerMoved="BoundingBoxesCanvas_PointerMoved"/>
+					</Grid>
+			</Grid>-->
+			<!-- Image Display Area -->
+			<Grid x:Name="RootGrid"
+				  Grid.Column="0"
+				  KeyDown="RootGrid_KeyDown"
+				  KeyUp="RootGrid_KeyUp"
+				  Focusable="True"
+				  PointerWheelChanged="RootGrid_PointerWheelChanged"
+				  ClipToBounds="True">
+
+				<Viewbox Stretch="Uniform"
+						 HorizontalAlignment="Center"
+						 VerticalAlignment="Center">
+					<Grid x:Name="ImageLayer"
+						  RenderTransformOrigin="0,0"
+>
+						<Image x:Name="MainImage"
+							   Stretch="None"
+							   Source="{Binding CurrentImageBitmap}" />
+						<Canvas x:Name="BoundingBoxesCanvas"
+								Background="Transparent"
+								Width="{Binding CurrentImageBitmap.PixelSize.Width}"
+								Height="{Binding CurrentImageBitmap.PixelSize.Height}"
+								PointerPressed="BoundingBoxesCanvas_PointerPressed"
+								PointerMoved="BoundingBoxesCanvas_PointerMoved"/>
+					</Grid>
+				</Viewbox>
+			</Grid>
+
 
 
 			<!-- Side Panel -->
@@ -154,7 +190,7 @@
 						<StackPanel Spacing="8">
 							<StackPanel Orientation="Horizontal" Spacing="10">
 								<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
-								<CheckBox Checked="ToggleSwitch_Checked" Unchecked="ToggleSwitch_Unchecked" Content="Always show resize thumbs" IsChecked="true" />
+								<CheckBox Checked="ShowAllEditingThumbsChecked" Unchecked="ShowAllEditingThumbsUnchecked" Content="Always show resize thumbs" IsChecked="true" />
 							</StackPanel>
 							<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
 								<ItemsControl.ItemTemplate>
@@ -194,7 +230,6 @@
 							</ItemsControl>
 						</StackPanel>
 					</Border>
-
 
 				</StackPanel>
 			</ScrollViewer>

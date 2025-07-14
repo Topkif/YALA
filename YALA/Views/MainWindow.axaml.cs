@@ -18,12 +18,31 @@ using YALA.ViewModels;
 namespace YALA.Views;
 public partial class MainWindow : Window
 {
+	private double currentImageScale = 1.0;
+	private const double ZoomFactor = 1.1;
+	private readonly ScaleTransform imageScaleTransform = new();
+	private readonly TranslateTransform imageLayerTranslate = new();
+
+	bool isCtrlKeyDown = false;
+	Point lastMousePosition;
+
 	private readonly MainWindowViewModel viewModel = App.MainVM;
 	public MainWindow()
 	{
 		InitializeComponent();
 		DataContext = viewModel;
 		viewModel.CurrentImageBoundingBoxes.CollectionChanged += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
+
+		var transformGroup = new TransformGroup
+		{
+			Children =
+		{
+			imageScaleTransform,
+			imageLayerTranslate
+		}
+		};
+		ImageLayer.RenderTransform = transformGroup;
+
 
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		var tb = this.FindControl<TextBox>("ImageIndexTextBox");
@@ -234,25 +253,90 @@ public partial class MainWindow : Window
 	{
 		if (sender is Button button && button.Tag is BoundingBox bbox)
 		{
-				viewModel.DeleteBoundingBox(bbox);
+			viewModel.DeleteBoundingBox(bbox);
 		}
 	}
 	private void OnEditBoundingBoxClicked(object? sender, RoutedEventArgs e)
 	{
 		if (sender is Button button && button.Tag is BoundingBox bbox)
 		{
-				viewModel.OnEditBoundingBoxClicked(bbox,true);
+			viewModel.OnEditBoundingBoxClicked(bbox, true);
 		}
 	}
 
-	private void ToggleSwitch_Checked(object? sender, RoutedEventArgs e)
+	private void ShowAllEditingThumbsChecked(object? sender, RoutedEventArgs e)
 	{
-			viewModel.ToggleSwitchCheckedCommand.Execute(true);
+		viewModel.ToggleSwitchCheckedCommand.Execute(true);
 	}
 
-	private void ToggleSwitch_Unchecked(object? sender, RoutedEventArgs e)
+	private void ShowAllEditingThumbsUnchecked(object? sender, RoutedEventArgs e)
 	{
-			viewModel.ToggleSwitchCheckedCommand.Execute(false);
+		viewModel.ToggleSwitchCheckedCommand.Execute(false);
 	}
 
+
+	private void BoundingBoxesCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
+	{
+		var point = e.GetPosition((Canvas)sender!);
+		viewModel.OnCanvasPointerPressed(point);
+	}
+
+	private void BoundingBoxesCanvas_PointerMoved(object? sender, PointerEventArgs e)
+	{
+		var point = e.GetPosition((Canvas)sender!);
+		lastMousePosition = point; // Store last mouse position
+		viewModel.OnCanvasPointerMoved(point);
+	}
+
+	private void RootGrid_PointerWheelChanged(object? sender, PointerWheelEventArgs e)
+	{
+		if (!isCtrlKeyDown)
+			return; // Only zoom when Ctrl is pressed
+
+		e.Handled = true;
+
+		var oldScale = currentImageScale;
+		var delta = e.Delta.Y;
+
+		currentImageScale *= delta > 0 ? ZoomFactor : 1 / ZoomFactor;
+		currentImageScale = Math.Clamp(currentImageScale, 0.1, 10);
+
+		// Calculate mouse position relative to content before scale change
+		var relativeX = lastMousePosition.X;
+		var relativeY = lastMousePosition.Y;
+
+		// Calculate absolute offset before scale change
+		var absX = relativeX * oldScale + imageLayerTranslate.X;
+		var absY = relativeY * oldScale + imageLayerTranslate.Y;
+
+		// Update scale
+		imageScaleTransform.ScaleX = currentImageScale;
+		imageScaleTransform.ScaleY = currentImageScale;
+
+		// Calculate new offset to keep mouse at same position
+		imageLayerTranslate.X = absX - relativeX * currentImageScale;
+		imageLayerTranslate.Y = absY - relativeY * currentImageScale;
+
+		imageLayerTranslate.X = imageLayerTranslate.X;
+		imageLayerTranslate.Y = imageLayerTranslate.Y;
+	}
+
+	private void RootGrid_KeyDown(object? sender, KeyEventArgs e)
+	{
+		if (e.Key == Key.Escape)
+		{
+			viewModel.CancelBoundingBoxDrawing();
+		}
+		else if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
+		{
+			isCtrlKeyDown = true;
+		}
+	}
+	private void RootGrid_KeyUp(object? sender, KeyEventArgs e)
+	{
+		if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
+		{
+			isCtrlKeyDown = false;
+		}
+	}
 }

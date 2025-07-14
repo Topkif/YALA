@@ -31,6 +31,11 @@ public partial class MainWindowViewModel : ViewModelBase
 	ResizeDirection resizeDirection;
 	int resizeLength;
 
+	// Varables for boundingbox creation
+	private bool isDrawingNewBoundingBox = false;
+	private Point startPoint;
+	private BoundingBox? newBoundingBox;
+
 	DatabaseService databaseService = new();
 	public MainWindowViewModel()
 	{
@@ -209,6 +214,49 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			boundingBox.EditingEnabled = editEnabled;
 		}
+	}
+	public void OnCanvasPointerPressed(Point position)
+	{
+		if (!isDrawingNewBoundingBox)
+		{
+			startPoint = position;
+			newBoundingBox = new BoundingBox
+			{
+				Tlx = (int)position.X,
+				Tly = (int)position.Y,
+				Width = 0,
+				Height = 0,
+				Color = "#AA00FF",
+				ClassName = "COUCOU",
+			};
+			CurrentImageBoundingBoxes.Add(newBoundingBox);
+			isDrawingNewBoundingBox = true;
+		}
+		else
+		{
+			isDrawingNewBoundingBox = false;
+			newBoundingBox = null;
+		}
+	}
+	public void CancelBoundingBoxDrawing()
+	{
+		isDrawingNewBoundingBox = false;
+		if (newBoundingBox == null)
+			return;
+		CurrentImageBoundingBoxes.Remove(newBoundingBox);
+		newBoundingBox = null;
+	}
+
+	public void OnCanvasPointerMoved(Point position)
+	{
+		if (!isDrawingNewBoundingBox || newBoundingBox == null)
+			return;
+
+		int newWidth = (int)(position.X - startPoint.X);
+		int newHeight = (int)(position.Y - startPoint.Y);
+
+		newBoundingBox.Width = newWidth;
+		newBoundingBox.Height = newHeight;
 	}
 
 }
