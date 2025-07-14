@@ -110,24 +110,36 @@
 									</ItemsControl.ItemsPanel>
 									<ItemsControl.ItemTemplate>
 										<DataTemplate>
-											<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="5">
+											<Border Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5">
 												<Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
-													<RadioButton Grid.Column="0" IsChecked="{Binding IsSelected}" Checked="OnClassChecked"/>
-													<TextBlock Grid.Column="1" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
-													<TextBlock Grid.Column="2" Margin="4,0" VerticalAlignment="Center">
-														<Run Text="(Id: "/>
-														<Run Text="{Binding Id}"/>
-														<Run Text=", Instances: "/>
-														<Run Text="{Binding NumberOfInstances}"/>
-														<Run Text=")"/>
-													</TextBlock>
-													<cp:ColorPicker Grid.Column="3" x:Name="DialogColorPicker"
-																		  Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
-																		  HorizontalAlignment="Stretch"
-																		  IsAlphaEnabled="False"
-																		  IsAlphaVisible="False"
-																		  VerticalAlignment="Stretch"
-																		  ColorChanged="OnColorChanged"/>
+													<Button Grid.ColumnSpan="3"
+															Background="Transparent"
+															BorderThickness="0"
+															Padding="8"
+															Click="OnClassChecked">
+														<Grid ColumnDefinitions="Auto,*,Auto">
+															<RadioButton Grid.Column="0"
+																		 IsChecked="{Binding IsSelected}"
+																		 Margin="0"
+																		 VerticalAlignment="Center"/>
+															<TextBlock Grid.Column="1" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
+															<TextBlock Grid.Column="2" Margin="4,0" VerticalAlignment="Center">
+																<Run Text="(Id: "/>
+																<Run Text="{Binding Id}"/>
+																<Run Text=", Instances: "/>
+																<Run Text="{Binding NumberOfInstances}"/>
+																<Run Text=")"/>
+															</TextBlock>
+														</Grid>
+													</Button>
+
+													<cp:ColorPicker Grid.Column="3"
+																	Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
+																	HorizontalAlignment="Stretch"
+																	IsAlphaEnabled="False"
+																	IsAlphaVisible="False"
+																	VerticalAlignment="Stretch"
+																	ColorChanged="OnColorChanged"/>
 												</Grid>
 											</Border>
 										</DataTemplate>
@@ -140,7 +152,10 @@
 					<!-- Annotations -->
 					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
 						<StackPanel Spacing="8">
-							<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
+							<StackPanel Orientation="Horizontal" Spacing="10">
+								<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
+								<CheckBox Checked="ToggleSwitch_Checked" Unchecked="ToggleSwitch_Unchecked" Content="Always show resize thumbs" IsChecked="true" />
+							</StackPanel>
 							<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
 								<ItemsControl.ItemTemplate>
 									<DataTemplate>
@@ -150,8 +165,8 @@
 														   Fill="{Binding Color, Converter={StaticResource HexToBrushConverter}}"
 														   Margin="0,0,8,0"/>
 												<StackPanel Grid.Column="1">
-													<TextBlock Text="{Binding ClassId}" FontWeight="Medium" FontSize="12"/>
-													<TextBlock Text="{Binding Tlx, StringFormat=({0}, }">
+													<TextBlock Text="{Binding ClassName}"/>
+													<TextBlock FontWeight="Medium" FontSize="12" Text="{Binding Tlx, StringFormat=({0}, }">
 														<TextBlock.Text>
 															<MultiBinding StringFormat="({0}, {1}) {2}×{3}">
 																<Binding Path="Tlx"/>
@@ -164,7 +179,7 @@
 												</StackPanel>
 												<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
 													<Button Classes="icon-button" ToolTip.Tip="Edit" Content="Pencil"
-															CommandParameter="{Binding}" />
+															Click="OnEditBoundingBoxClicked" Tag="{Binding}"/>
 													<Button Classes="icon-button"
 															ToolTip.Tip="Delete"
 															Content="Trash2"

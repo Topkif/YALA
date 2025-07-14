@@ -50,9 +50,5 @@
 	<!--<Style Selector="Button.icon-button:pressed">
 		<Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
 	</Style>-->
-	
-	
-
-
 
 </Styles>

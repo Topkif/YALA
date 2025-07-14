@@ -141,9 +141,11 @@ public partial class MainWindow : Window
 	{
 		if (sender is RadioButton rb && rb.DataContext is LabelingClass selectedClass)
 		{
-			if (DataContext is not MainWindowViewModel viewModel)
-				return;
 			viewModel.SetSelectedLabel(selectedClass);
+		}
+		else if (sender is Button but && but.DataContext is LabelingClass selectedClass2)
+		{
+			viewModel.SetSelectedLabel(selectedClass2);
 		}
 	}
 
@@ -232,12 +234,25 @@ public partial class MainWindow : Window
 	{
 		if (sender is Button button && button.Tag is BoundingBox bbox)
 		{
-			if (DataContext is MainWindowViewModel viewModel)
-			{
 				viewModel.DeleteBoundingBox(bbox);
-			}
+		}
+	}
+	private void OnEditBoundingBoxClicked(object? sender, RoutedEventArgs e)
+	{
+		if (sender is Button button && button.Tag is BoundingBox bbox)
+		{
+				viewModel.OnEditBoundingBoxClicked(bbox,true);
 		}
 	}
 
+	private void ToggleSwitch_Checked(object? sender, RoutedEventArgs e)
+	{
+			viewModel.ToggleSwitchCheckedCommand.Execute(true);
+	}
+
+	private void ToggleSwitch_Unchecked(object? sender, RoutedEventArgs e)
+	{
+			viewModel.ToggleSwitchCheckedCommand.Execute(false);
+	}
 
 }
