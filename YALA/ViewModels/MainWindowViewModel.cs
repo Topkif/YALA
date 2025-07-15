@@ -29,7 +29,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	// Variables for bounding box resizing
 	BoundingBox resizingBoundingBox = new();
 	ResizeDirection resizeDirection;
-	int resizeLength;
+	double resizeLength;
 
 	// Varables for boundingbox creation
 	private bool isDrawingNewBoundingBox = false;
@@ -159,7 +159,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public void OnThumbDragDelta(double delta)
 	{
-		resizeLength = (int)delta;
+		resizeLength = delta;
 
 		switch (resizeDirection)
 		{
@@ -222,8 +222,8 @@ public partial class MainWindowViewModel : ViewModelBase
 			startPoint = position;
 			newBoundingBox = new BoundingBox
 			{
-				Tlx = (int)position.X,
-				Tly = (int)position.Y,
+				Tlx = position.X,
+				Tly = position.Y,
 				Width = 0,
 				Height = 0,
 				Color = "#AA00FF",
@@ -252,8 +252,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (!isDrawingNewBoundingBox || newBoundingBox == null)
 			return;
 
-		int newWidth = (int)(position.X - startPoint.X);
-		int newHeight = (int)(position.Y - startPoint.Y);
+		double newWidth = position.X - startPoint.X;
+		double newHeight = position.Y - startPoint.Y;
 
 		newBoundingBox.Width = newWidth;
 		newBoundingBox.Height = newHeight;

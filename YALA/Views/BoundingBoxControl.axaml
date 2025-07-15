@@ -18,7 +18,7 @@
 		</ControlTemplate>
 	</UserControl.Resources>
 
-	<Grid Margin="3">
+	<Grid Margin="0">
 		<!-- Rectangle -->
 		<Rectangle
             Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"
@@ -29,8 +29,9 @@
 		<!-- Horizontal Top -->
 		<Thumb Name="TopThumb"
 			   Cursor="SizeNorthSouth"
-               Width="20" Height="7"
-               Background="#E0BBFF" BorderBrush="#A020F0" BorderThickness="1"
+               Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+			   Height="8"
+               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Center" VerticalAlignment="Top"
                Margin="0,-3,0,0"
                Template="{StaticResource ThumbTemplate}"
@@ -42,8 +43,9 @@
 		<!-- Horizontal Bottom -->
 		<Thumb Name="BottomThumb"
 			   Cursor="SizeNorthSouth"
-               Width="20" Height="7"
-               Background="#E0BBFF" BorderBrush="#A020F0" BorderThickness="1"
+               Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+			   Height="8"
+               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Center" VerticalAlignment="Bottom"
                Margin="0,0,0,-3"
                Template="{StaticResource ThumbTemplate}"
@@ -55,8 +57,9 @@
 		<!-- Vertical Left -->
 		<Thumb Name="LeftThumb"
 			   Cursor="SizeWestEast"
-               Width="7" Height="20"
-               Background="#E0BBFF" BorderBrush="#A020F0" BorderThickness="1"
+               Width="8" 
+               Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Left" VerticalAlignment="Center"
                Margin="-3,0,0,0"
                Template="{StaticResource ThumbTemplate}"
@@ -68,8 +71,9 @@
 		<!-- Vertical Right -->
 		<Thumb Name="RightThumb"
 			   Cursor="SizeWestEast"
-               Width="7" Height="20"
-               Background="#E0BBFF" BorderBrush="#A020F0" BorderThickness="1"
+               Width="8"
+               Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Right" VerticalAlignment="Center"
                Margin="0,0,-3,0"
                Template="{StaticResource ThumbTemplate}"

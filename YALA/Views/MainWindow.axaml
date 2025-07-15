@@ -6,7 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="YALA.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/logo-YALA.ico"
 		xmlns:conv="using:YALA.Converters"
         xmlns:lucide="clr-namespace:Lucide.Avalonia;assembly=Lucide.Avalonia"
 		xmlns:views="clr-namespace:YALA.Views;assembly=YALA"
@@ -22,6 +22,7 @@
 		<conv:HexToBrushConverter x:Key="HexToBrushConverter"/>
 		<conv:HalfSizeOffsetConverter x:Key="HalfWidthOffsetConverter" />
 		<conv:HalfSizeOffsetConverter x:Key="HalfHeightOffsetConverter" />
+		<conv:DoubleToIntConverter x:Key="DoubleToIntConverter"/>
 	</Window.Resources>
 
 	<Grid RowDefinitions="Auto,*, Auto" x:Name="MainFocusTarget" Focusable="True">
@@ -49,7 +50,7 @@
 				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
 					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
-					<Button Classes="icon-button" ToolTip.Tip="Rectangle Tool" Content="Square"/>
+					<ToggleButton Classes="icon-button" ToolTip.Tip="Rectangle Tool" Content="SquarePen"/>
 					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
 				</StackPanel>
 			</Grid>
@@ -78,8 +79,9 @@
 								PointerMoved="BoundingBoxesCanvas_PointerMoved"/>
 					</Grid>
 			</Grid>-->
+
 			<!-- Image Display Area -->
-			<Grid x:Name="RootGrid"
+			<!--<Grid x:Name="RootGrid"
 				  Grid.Column="0"
 				  KeyDown="RootGrid_KeyDown"
 				  KeyUp="RootGrid_KeyUp"
@@ -87,14 +89,13 @@
 				  PointerWheelChanged="RootGrid_PointerWheelChanged"
 				  ClipToBounds="True">
 
-				<Viewbox Stretch="Uniform"
+				<Viewbox Stretch="UniformToFill"
 						 HorizontalAlignment="Center"
 						 VerticalAlignment="Center">
 					<Grid x:Name="ImageLayer"
-						  RenderTransformOrigin="0,0"
->
+						  RenderTransformOrigin="0,0">
 						<Image x:Name="MainImage"
-							   Stretch="None"
+							   Stretch="Uniform"
 							   Source="{Binding CurrentImageBitmap}" />
 						<Canvas x:Name="BoundingBoxesCanvas"
 								Background="Transparent"
@@ -104,7 +105,38 @@
 								PointerMoved="BoundingBoxesCanvas_PointerMoved"/>
 					</Grid>
 				</Viewbox>
+			</Grid>-->
+			<Grid x:Name="RootGrid"
+			  Grid.Column="0"
+			  KeyDown="RootGrid_KeyDown"
+			  KeyUp="RootGrid_KeyUp"
+			  Focusable="True"
+			  ClipToBounds="True"
+			  PointerWheelChanged="RootGrid_PointerWheelChanged">
+
+				<ScrollViewer HorizontalScrollBarVisibility="Auto"
+							  VerticalScrollBarVisibility="Auto">
+					<Border  x:Name="ImageContainer" HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							MaxWidth="{Binding Width, RelativeSource={RelativeSource AncestorType=Grid}}"
+							MaxHeight="{Binding Height, RelativeSource={RelativeSource AncestorType=Grid}}">
+
+						<Grid x:Name="ImageLayer"
+							  RenderTransformOrigin="0,0">
+							<Image x:Name="MainImage"
+								   Stretch="Uniform"
+								   Source="{Binding CurrentImageBitmap}" />
+							<Canvas x:Name="BoundingBoxesCanvas"
+									Background="Transparent"
+									Width="{Binding CurrentImageBitmap.PixelSize.Width}"
+									Height="{Binding CurrentImageBitmap.PixelSize.Height}"
+									PointerPressed="BoundingBoxesCanvas_PointerPressed"
+									PointerMoved="BoundingBoxesCanvas_PointerMoved"/>
+						</Grid>
+					</Border>
+				</ScrollViewer>
 			</Grid>
+
 
 
 
@@ -173,6 +205,7 @@
 																	Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
 																	HorizontalAlignment="Stretch"
 																	IsAlphaEnabled="False"
+																	Margin="0,0,5,0"
 																	IsAlphaVisible="False"
 																	VerticalAlignment="Stretch"
 																	ColorChanged="OnColorChanged"/>
@@ -205,10 +238,10 @@
 													<TextBlock FontWeight="Medium" FontSize="12" Text="{Binding Tlx, StringFormat=({0}, }">
 														<TextBlock.Text>
 															<MultiBinding StringFormat="({0}, {1}) {2}×{3}">
-																<Binding Path="Tlx"/>
-																<Binding Path="Tly"/>
-																<Binding Path="Width"/>
-																<Binding Path="Height"/>
+																<Binding Path="Tlx" Converter="{StaticResource DoubleToIntConverter}"/>
+																<Binding Path="Tly" Converter="{StaticResource DoubleToIntConverter}"/>
+																<Binding Path="Width" Converter="{StaticResource DoubleToIntConverter}"/>
+																<Binding Path="Height" Converter="{StaticResource DoubleToIntConverter}"/>
 															</MultiBinding>
 														</TextBlock.Text>
 													</TextBlock>

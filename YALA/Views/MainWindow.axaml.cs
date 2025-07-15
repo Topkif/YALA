@@ -43,6 +43,14 @@ public partial class MainWindow : Window
 		};
 		ImageLayer.RenderTransform = transformGroup;
 
+		RootGrid.AttachedToVisualTree += (_, __) =>
+		{
+			RootGrid.LayoutUpdated += (_, __) =>
+			{
+				ImageContainer.MaxWidth = RootGrid.Bounds.Width;
+				ImageContainer.MaxHeight = RootGrid.Bounds.Height;
+			};
+		};
 
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		var tb = this.FindControl<TextBox>("ImageIndexTextBox");

@@ -11,7 +11,8 @@
 					<SolidColorBrush x:Key="PanelBackgroundBrush" Color="#F0F0F0"/>
 					<SolidColorBrush x:Key="MenuBackGroundBrush" Color="#F1F2F4"/>
 					<SolidColorBrush x:Key="AccentBrush" Color="#007ACC"/>
-					<SolidColorBrush x:Key="ButtonHoverBrush" Color="#F797D2"/>
+					<SolidColorBrush x:Key="ButtonHoverBrush" Color="#5E4DB2"/>
+					<SolidColorBrush x:Key="ButtonEnabledBrush" Color="#8F7EE7"/>
 				</ResourceDictionary>
 				<ResourceDictionary x:Key="Dark">
 					<SolidColorBrush x:Key="BackgroundBrush" Color="#1E1E1E"/>
@@ -20,12 +21,13 @@
 					<SolidColorBrush x:Key="MenuBackGroundBrush" Color="#1D2125"/>
 					<SolidColorBrush x:Key="AccentBrush" Color="#0099FF"/>
 					<SolidColorBrush x:Key="ButtonHoverBrush" Color="#5E4DB2"/>
+					<SolidColorBrush x:Key="ButtonEnabledBrush" Color="#8F7EE7"/>
 				</ResourceDictionary>
 			</ResourceDictionary.ThemeDictionaries>
 		</ResourceDictionary>
 	</Styles.Resources>
 
-	
+	<!--Style for Buttons-->
 	<Style Selector="Button.icon-button">
 		<Setter Property="Width" Value="32"/>
 		<Setter Property="Height" Value="32"/>
@@ -42,13 +44,36 @@
 			</ControlTemplate>
 		</Setter>
 	</Style>
-
 	<Style Selector="Button.icon-button:pointerover">
 		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
 	</Style>
 	
-	<!--<Style Selector="Button.icon-button:pressed">
-		<Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
-	</Style>-->
+	<!--Style for ToggleButtons-->
+	<Style Selector="ToggleButton.icon-button">
+		<Setter Property="Width" Value="32"/>
+		<Setter Property="Height" Value="32"/>
+		<Setter Property="Padding" Value="0"/>
+		<Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+		<Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Background="{TemplateBinding Background}" CornerRadius="5">
+					<Viewbox Width="20" Height="20" Stretch="Uniform">
+						<lucide:LucideIcon Kind="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" />
+					</Viewbox>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</Style>
+	<Style Selector="ToggleButton.icon-button:pointerover">
+		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
+	</Style>
+	<Style Selector="ToggleButton.icon-button:checked">
+		<Setter Property="Background" Value="{DynamicResource ButtonEnabledBrush}"/>
+	</Style>
+	<Style Selector="ToggleButton.icon-button:checked:pointerover">
+		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
+	</Style>
+
 
 </Styles>
