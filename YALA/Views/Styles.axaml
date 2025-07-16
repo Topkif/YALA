@@ -74,6 +74,39 @@
 	<Style Selector="ToggleButton.icon-button:checked:pointerover">
 		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
 	</Style>
+	
+	<!--Other Toggle button-->
+	<Style Selector="ToggleButton.class-button">
+		<Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Background="{TemplateBinding Background}"
+						CornerRadius="5"
+						Padding="{TemplateBinding Padding}">
+					<ContentPresenter
+						Content="{TemplateBinding Content}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+						VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</Style>
+
+	<Style Selector="ToggleButton.class-button:pointerover">
+		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+	</Style>
+
+	<Style Selector="ToggleButton.class-button:checked">
+		<Setter Property="Background" Value="{DynamicResource ButtonEnabledBrush}" />
+	</Style>
+
+	<Style Selector="ToggleButton.class-button:checked:pointerover">
+		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+	</Style>
+
+
 
 
 </Styles>

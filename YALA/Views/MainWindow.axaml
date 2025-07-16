@@ -115,54 +115,42 @@
 					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
 						<StackPanel Spacing="8">
 							<TextBlock Text="Classes" FontWeight="Bold" FontSize="14"/>
-							<StackPanel>
-								<ItemsControl ItemsSource="{Binding LabelingClasses}">
-									<ItemsControl.ItemsPanel>
-										<ItemsPanelTemplate>
-											<StackPanel Spacing="8"/>
-										</ItemsPanelTemplate>
-									</ItemsControl.ItemsPanel>
-									<ItemsControl.ItemTemplate>
-										<DataTemplate>
-											<Border Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5">
-												<Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
-													<Button Grid.ColumnSpan="3"
-															Background="Transparent"
-															BorderThickness="0"
-															Padding="8"
-															Click="OnClassChecked">
-														<Grid ColumnDefinitions="Auto,*,Auto">
-															<RadioButton Grid.Column="0"
-																		 IsChecked="{Binding IsSelected}"
-																		 Margin="0"
-																		 VerticalAlignment="Center"/>
-															<TextBlock Grid.Column="1" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
-															<TextBlock Grid.Column="2" Margin="4,0" VerticalAlignment="Center">
-																<Run Text="(Id: "/>
-																<Run Text="{Binding Id}"/>
-																<Run Text=", Instances: "/>
-																<Run Text="{Binding NumberOfInstances}"/>
-																<Run Text=")"/>
-															</TextBlock>
-														</Grid>
-													</Button>
-
-													<cp:ColorPicker Grid.Column="3"
+							<ItemsControl ItemsSource="{Binding LabelingClasses}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<StackPanel Spacing="8"/>
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<Border Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5">
+											<ToggleButton Classes="class-button"
+												IsChecked="{Binding IsSelected}"
+														  Click="OnClassChecked"
+														  BorderThickness="0"
+														  Padding="8"
+														  HorizontalAlignment="Stretch">
+												<Grid ColumnDefinitions="Auto,Auto,*"
+													  HorizontalAlignment="Stretch">
+													<TextBlock Grid.Column="0" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
+													<TextBlock Grid.Column="1" Text="{Binding NumberOfInstances, StringFormat='({0} Instances)'}" VerticalAlignment="Center" />
+													<cp:ColorPicker Grid.Column="2"
 																	Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
-																	HorizontalAlignment="Stretch"
-																	IsAlphaEnabled="False"
+																	HorizontalAlignment="Right"
 																	Margin="0,0,5,0"
+																	IsAlphaEnabled="False"
 																	IsAlphaVisible="False"
-																	VerticalAlignment="Stretch"
+																	VerticalAlignment="Center"
 																	ColorChanged="OnColorChanged"/>
 												</Grid>
-											</Border>
-										</DataTemplate>
-									</ItemsControl.ItemTemplate>
-								</ItemsControl>
-							</StackPanel>
+											</ToggleButton>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
 						</StackPanel>
 					</Border>
+
 
 					<!-- Annotations -->
 					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
@@ -213,9 +201,17 @@
 				</StackPanel>
 			</ScrollViewer>
 		</Grid>
-		<StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5" >
-			<Label x:Name="MousePositionLabel" Content="(0, 0)" FontSize="12" Margin="10"/>
-			<TextBlock Text="{Binding CurrentImageAbsolutePath, StringFormat='Image path: {0}'}"/>
-		</StackPanel>
+		<Grid Grid.Row="2" Margin="2">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition MinWidth="75" Width="Auto"/>
+				<ColumnDefinition Width="*"/>
+			</Grid.ColumnDefinitions>
+			<Label x:Name="MousePositionLabel" FontSize="12"
+				   VerticalAlignment="Center"/>
+			<TextBlock Text="{Binding CurrentImageAbsolutePath, StringFormat='Image path: {0}'}"
+					   VerticalAlignment="Center"
+					   Grid.Column="1"/>
+		</Grid>
+
 	</Grid>
 </Window>

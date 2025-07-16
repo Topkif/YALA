@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.PanAndZoom;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -14,12 +16,10 @@ using System.Linq;
 using YALA.Converters;
 using YALA.Models;
 using YALA.ViewModels;
-using Avalonia.Controls.PanAndZoom;
 
 namespace YALA.Views;
 public partial class MainWindow : Window
 {
-	private readonly ZoomBorder? _zoomBorder;
 	bool isCtrlKeyDown = false;
 	Point lastMousePosition;
 	public Point LastMousePosition
@@ -38,22 +38,8 @@ public partial class MainWindow : Window
 		DataContext = viewModel;
 		viewModel.CurrentImageBoundingBoxes.CollectionChanged += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 
-
-		_zoomBorder = this.Find<ZoomBorder>("ZoomBorder");
-
-
-		//RootGrid.AttachedToVisualTree += (_, __) =>
-		//{
-		//	RootGrid.LayoutUpdated += (_, __) =>
-		//	{
-		//		ImageContainer.MaxWidth = RootGrid.Bounds.Width;
-		//		ImageContainer.MaxHeight = RootGrid.Bounds.Height;
-		//	};
-		//};
-
 		this.Opened += (_, _) => MainFocusTarget.Focus();
-		var tb = this.FindControl<TextBox>("ImageIndexTextBox");
-		tb.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
+		ImageIndexTextBox.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
 	}
 
 	private void UpdateBoundingBoxes()
@@ -81,7 +67,6 @@ public partial class MainWindow : Window
 			BoundingBoxesCanvas.Children.Add(control);
 		}
 	}
-
 	private static void OnTextInput(object? sender, TextInputEventArgs e)
 	{
 		if (!int.TryParse(e.Text, out _))
@@ -165,11 +150,7 @@ public partial class MainWindow : Window
 
 	private void OnClassChecked(object sender, RoutedEventArgs e)
 	{
-		if (sender is RadioButton rb && rb.DataContext is LabelingClass selectedClass)
-		{
-			viewModel.SetSelectedLabel(selectedClass);
-		}
-		else if (sender is Button but && but.DataContext is LabelingClass selectedClass2)
+		if (sender is ToggleButton but && but.DataContext is LabelingClass selectedClass2)
 		{
 			viewModel.SetSelectedLabel(selectedClass2);
 		}
@@ -283,6 +264,6 @@ public partial class MainWindow : Window
 
 	private void ResetZoomButtonClicked(object? sender, RoutedEventArgs e)
 	{
-		_zoomBorder?.ResetMatrix();
+		ZoomBorder.ResetMatrix();
 	}
 }
