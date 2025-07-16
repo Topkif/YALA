@@ -18,7 +18,7 @@
 		</ControlTemplate>
 	</UserControl.Resources>
 
-	<Grid Margin="0">
+	<Grid Margin="3">
 		<!-- Rectangle -->
 		<Rectangle
             Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"

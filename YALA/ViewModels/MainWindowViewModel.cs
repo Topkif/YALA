@@ -43,7 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 23, IsSelected = false });
 		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 45, IsSelected = true });
 		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 0, ClassName = "robot", Tlx = 110, Tly = 100, Width = 100, Height = 200, Color = "#FF0000" });
-		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 3, ClassName = "but", Tlx = 300, Tly = 0, Width = 50, Height = 100, Color = "#0000FF" });
+		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 3, ClassName = "but", Tlx = 402, Tly = 340, Width = 534-402, Height = 519-340, Color = "#0000FF" });
 	}
 
 	public void CreateNewProject(string dbPath, string classesPath)
@@ -222,8 +222,8 @@ public partial class MainWindowViewModel : ViewModelBase
 			startPoint = position;
 			newBoundingBox = new BoundingBox
 			{
-				Tlx = position.X,
-				Tly = position.Y,
+				Tlx = position.X - 2,
+				Tly = position.Y - 2,
 				Width = 0,
 				Height = 0,
 				Color = "#AA00FF",

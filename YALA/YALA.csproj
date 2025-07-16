@@ -28,6 +28,6 @@
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Lucide.Avalonia" Version="0.1.36" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0-preview.5.25277.114" />
-    <PackageReference Include="UVtools.AvaloniaControls" Version="4.1.0" />
+    <PackageReference Include="PanAndZoom" Version="11.3.0.1" />
   </ItemGroup>
 </Project>

@@ -14,18 +14,23 @@ using System.Linq;
 using YALA.Converters;
 using YALA.Models;
 using YALA.ViewModels;
+using Avalonia.Controls.PanAndZoom;
 
 namespace YALA.Views;
 public partial class MainWindow : Window
 {
-	private double currentImageScale = 1.0;
-	private const double ZoomFactor = 1.1;
-	private readonly ScaleTransform imageScaleTransform = new();
-	private readonly TranslateTransform imageLayerTranslate = new();
-
+	private readonly ZoomBorder? _zoomBorder;
 	bool isCtrlKeyDown = false;
 	Point lastMousePosition;
-
+	public Point LastMousePosition
+	{
+		get => lastMousePosition;
+		set
+		{
+			lastMousePosition = value;
+			MousePositionLabel.Content = $"({(int)value.X}, {(int)value.Y})";
+		}
+	}
 	private readonly MainWindowViewModel viewModel = App.MainVM;
 	public MainWindow()
 	{
@@ -33,24 +38,18 @@ public partial class MainWindow : Window
 		DataContext = viewModel;
 		viewModel.CurrentImageBoundingBoxes.CollectionChanged += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 
-		var transformGroup = new TransformGroup
-		{
-			Children =
-		{
-			imageScaleTransform,
-			imageLayerTranslate
-		}
-		};
-		ImageLayer.RenderTransform = transformGroup;
 
-		RootGrid.AttachedToVisualTree += (_, __) =>
-		{
-			RootGrid.LayoutUpdated += (_, __) =>
-			{
-				ImageContainer.MaxWidth = RootGrid.Bounds.Width;
-				ImageContainer.MaxHeight = RootGrid.Bounds.Height;
-			};
-		};
+		_zoomBorder = this.Find<ZoomBorder>("ZoomBorder");
+
+
+		//RootGrid.AttachedToVisualTree += (_, __) =>
+		//{
+		//	RootGrid.LayoutUpdated += (_, __) =>
+		//	{
+		//		ImageContainer.MaxWidth = RootGrid.Bounds.Width;
+		//		ImageContainer.MaxHeight = RootGrid.Bounds.Height;
+		//	};
+		//};
 
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		var tb = this.FindControl<TextBox>("ImageIndexTextBox");
@@ -211,6 +210,21 @@ public partial class MainWindow : Window
 			viewModel.NextImageCommand.Execute(null);
 			e.Handled = true;
 		}
+		else if (e.Key == Key.Escape)
+		{
+			viewModel.CancelBoundingBoxDrawing();
+		}
+		else if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
+		{
+			isCtrlKeyDown = true;
+		}
+	}
+	private void OnKeyUp(object? sender, KeyEventArgs e)
+	{
+		if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
+		{
+			isCtrlKeyDown = false;
+		}
 	}
 	private void OnMenuKeyDown(object? sender, KeyEventArgs e)
 	{
@@ -225,35 +239,6 @@ public partial class MainWindow : Window
 			{
 				viewModel.GotoImage(index);
 			}
-		}
-	}
-
-	private void OnImagePointerPressed(object? sender, PointerPressedEventArgs e)
-	{
-		if (viewModel?.CurrentImageBitmap == null || sender is not Image image)
-			return;
-
-		var clickProperties = e.GetCurrentPoint(image).Properties;
-
-		// Get the position of the click relative to the image control
-		var controlPoint = e.GetPosition(image);
-
-		// Convert control point to pixel space of the bitmap
-		var bmpSize = viewModel.CurrentImageBitmap.PixelSize;
-		var imageWidth = image.Bounds.Width;
-		var imageHeight = image.Bounds.Height;
-
-		var scaleX = bmpSize.Width / imageWidth;
-		var scaleY = bmpSize.Height / imageHeight;
-		var imagePoint = new Point(controlPoint.X * scaleX, controlPoint.Y * scaleY);
-
-		if (clickProperties.IsLeftButtonPressed)
-		{
-			viewModel.OnImageLeftClickedReceived(imagePoint);
-		}
-		else if (clickProperties.IsRightButtonPressed)
-		{
-			viewModel.OnImageRightClickedReceived(imagePoint);
 		}
 	}
 
@@ -292,59 +277,12 @@ public partial class MainWindow : Window
 	private void BoundingBoxesCanvas_PointerMoved(object? sender, PointerEventArgs e)
 	{
 		var point = e.GetPosition((Canvas)sender!);
-		lastMousePosition = point; // Store last mouse position
+		LastMousePosition = point; // Store last mouse position
 		viewModel.OnCanvasPointerMoved(point);
 	}
 
-	private void RootGrid_PointerWheelChanged(object? sender, PointerWheelEventArgs e)
+	private void ResetZoomButtonClicked(object? sender, RoutedEventArgs e)
 	{
-		if (!isCtrlKeyDown)
-			return; // Only zoom when Ctrl is pressed
-
-		e.Handled = true;
-
-		var oldScale = currentImageScale;
-		var delta = e.Delta.Y;
-
-		currentImageScale *= delta > 0 ? ZoomFactor : 1 / ZoomFactor;
-		currentImageScale = Math.Clamp(currentImageScale, 0.1, 10);
-
-		// Calculate mouse position relative to content before scale change
-		var relativeX = lastMousePosition.X;
-		var relativeY = lastMousePosition.Y;
-
-		// Calculate absolute offset before scale change
-		var absX = relativeX * oldScale + imageLayerTranslate.X;
-		var absY = relativeY * oldScale + imageLayerTranslate.Y;
-
-		// Update scale
-		imageScaleTransform.ScaleX = currentImageScale;
-		imageScaleTransform.ScaleY = currentImageScale;
-
-		// Calculate new offset to keep mouse at same position
-		imageLayerTranslate.X = absX - relativeX * currentImageScale;
-		imageLayerTranslate.Y = absY - relativeY * currentImageScale;
-
-		imageLayerTranslate.X = imageLayerTranslate.X;
-		imageLayerTranslate.Y = imageLayerTranslate.Y;
-	}
-
-	private void RootGrid_KeyDown(object? sender, KeyEventArgs e)
-	{
-		if (e.Key == Key.Escape)
-		{
-			viewModel.CancelBoundingBoxDrawing();
-		}
-		else if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
-		{
-			isCtrlKeyDown = true;
-		}
-	}
-	private void RootGrid_KeyUp(object? sender, KeyEventArgs e)
-	{
-		if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
-		{
-			isCtrlKeyDown = false;
-		}
+		_zoomBorder?.ResetMatrix();
 	}
 }
