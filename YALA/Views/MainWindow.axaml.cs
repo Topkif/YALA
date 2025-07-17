@@ -37,7 +37,7 @@ public partial class MainWindow : Window
 		InitializeComponent();
 		DataContext = viewModel;
 		viewModel.CurrentImageBoundingBoxes.CollectionChanged += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
-
+		//viewModel.OnForceNewBoundingBoxCollection += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		ImageIndexTextBox.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
 	}
@@ -150,9 +150,9 @@ public partial class MainWindow : Window
 
 	private void OnClassChecked(object sender, RoutedEventArgs e)
 	{
-		if (sender is ToggleButton but && but.DataContext is LabelingClass selectedClass2)
+		if (sender is ToggleButton but && but.DataContext is LabelingClass selectedClass)
 		{
-			viewModel.SetSelectedLabel(selectedClass2);
+			viewModel.SetSelectedLabel(selectedClass);
 		}
 	}
 
@@ -230,24 +230,6 @@ public partial class MainWindow : Window
 			viewModel.DeleteBoundingBox(bbox);
 		}
 	}
-	private void OnEditBoundingBoxClicked(object? sender, RoutedEventArgs e)
-	{
-		if (sender is Button button && button.Tag is BoundingBox bbox)
-		{
-			viewModel.OnEditBoundingBoxClicked(bbox, true);
-		}
-	}
-
-	private void ShowAllEditingThumbsChecked(object? sender, RoutedEventArgs e)
-	{
-		viewModel.ToggleSwitchCheckedCommand.Execute(true);
-	}
-
-	private void ShowAllEditingThumbsUnchecked(object? sender, RoutedEventArgs e)
-	{
-		viewModel.ToggleSwitchCheckedCommand.Execute(false);
-	}
-
 
 	private void BoundingBoxesCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
 	{
@@ -265,5 +247,19 @@ public partial class MainWindow : Window
 	private void ResetZoomButtonClicked(object? sender, RoutedEventArgs e)
 	{
 		ZoomBorder.ResetMatrix();
+	}
+	private void OnAnnotationChecked(object? sender, RoutedEventArgs e)
+	{
+		if (sender is ToggleButton button && button.DataContext is BoundingBox bb)
+		{
+			viewModel.SetSelectedAnnotation(bb, true);
+		}
+	}
+	private void OnAnnotationUnchecked(object? sender, RoutedEventArgs e)
+	{
+		if (sender is ToggleButton button && button.DataContext is BoundingBox bb)
+		{
+			viewModel.SetSelectedAnnotation(bb, false);
+		}
 	}
 }

@@ -8,6 +8,7 @@
 		<conv:HexToBrushConverter x:Key="HexToBrushConverter" />
 		<conv:BoolToIsVisibleConverter x:Key="BoolToIsVisibleConverter" />
 		<conv:AddStrokeConverter x:Key="AddStrokeConverter" />
+		<conv:SelectedToFillBrushConverter x:Key="SelectedToFillBrushConverter" />
 		<x:Double x:Key="StrokeSize">2</x:Double>
 
 		<ControlTemplate x:Key="ThumbTemplate" TargetType="Thumb">
@@ -24,7 +25,14 @@
             Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"
             Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"
             Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-            StrokeThickness="{StaticResource StrokeSize}" />
+            StrokeThickness="{StaticResource StrokeSize}" >
+			<Rectangle.Fill>
+				<MultiBinding Converter="{StaticResource SelectedToFillBrushConverter}" ConverterParameter="0.2">
+					<Binding Path="BoundingBox.IsSelected" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
+					<Binding Path="BoundingBox.Color" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
+				</MultiBinding>
+			</Rectangle.Fill>
+		</Rectangle>
 
 		<!-- Horizontal Top -->
 		<Thumb Name="TopThumb"
@@ -57,7 +65,7 @@
 		<!-- Vertical Left -->
 		<Thumb Name="LeftThumb"
 			   Cursor="SizeWestEast"
-               Width="8" 
+               Width="8"
                Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Left" VerticalAlignment="Center"

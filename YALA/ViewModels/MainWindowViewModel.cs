@@ -1,20 +1,22 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
+using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using YALA.Services;
-using Avalonia.Controls;
-using Avalonia.Platform.Storage;
-using System.Collections.ObjectModel;
 using YALA.Models;
-using Avalonia.Controls.Shapes;
-using System.Linq;
-using Avalonia.Media.Imaging;
-using System.Reflection;
-using Avalonia;
+using YALA.Services;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
@@ -25,9 +27,11 @@ public partial class MainWindowViewModel : ViewModelBase
 	[ObservableProperty] int currentImageIndex = 1;
 	[ObservableProperty] string currentImageAbsolutePath = "";
 	[ObservableProperty] Bitmap currentImageBitmap;
+	[ObservableProperty] bool resizingBoundingBoxEnabled;
 
 	// Variables for bounding box resizing
 	BoundingBox resizingBoundingBox = new();
+	LabelingClass? selectedLabel = null;
 	ResizeDirection resizeDirection;
 	double resizeLength;
 
@@ -37,13 +41,15 @@ public partial class MainWindowViewModel : ViewModelBase
 	private BoundingBox? newBoundingBox;
 
 	DatabaseService databaseService = new();
+
+	public event EventHandler? OnForceNewBoundingBoxCollection;
 	public MainWindowViewModel()
 	{
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
 		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 23, IsSelected = false });
 		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 45, IsSelected = true });
-		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 0, ClassName = "robot", Tlx = 110, Tly = 100, Width = 100, Height = 200, Color = "#FF0000" });
-		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 3, ClassName = "but", Tlx = 402, Tly = 340, Width = 534-402, Height = 519-340, Color = "#0000FF" });
+		//CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 0, ClassName = "robot", Tlx = 110, Tly = 100, Width = 100, Height = 200, Color = "#FF0000" });
+		//CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 3, ClassName = "but", Tlx = 402, Tly = 340, Width = 534-402, Height = 519-340, Color = "#0000FF" });
 	}
 
 	public void CreateNewProject(string dbPath, string classesPath)
@@ -86,6 +92,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	public void UpdateLabelColor(LabelingClass labelingClass)
 	{
 		databaseService.SetClassColor(labelingClass.Name, labelingClass.Color);
+		CurrentImageBoundingBoxes.Where(x => x.ClassId == labelingClass.Id).ToList().ForEach(x => x.Color = labelingClass.Color);
 	}
 
 	public void SetSelectedLabel(LabelingClass labelingClass)
@@ -95,6 +102,15 @@ public partial class MainWindowViewModel : ViewModelBase
 			label.IsSelected = false;
 		}
 		labelingClass.IsSelected = true;
+		selectedLabel = labelingClass;
+	}
+	public void SetSelectedAnnotation(BoundingBox boundingBox, bool value)
+	{
+		foreach (var bb in CurrentImageBoundingBoxes)
+		{
+			bb.IsSelected = false;
+		}
+		boundingBox.IsSelected = value;
 	}
 
 	public void AddImages(List<string> imagesPaths)
@@ -119,6 +135,11 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageIndex = Math.Min(ImagesPaths.Count, CurrentImageIndex + 1);
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex);
+		if (CurrentImageBoundingBoxes.Count == 0)
+		{
+			OnForceNewBoundingBoxCollection?.Invoke(this, EventArgs.Empty);
+		}
 	}
 
 	[RelayCommand]
@@ -129,16 +150,26 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageIndex = Math.Max(1, CurrentImageIndex - 1);
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex);
+		if (CurrentImageBoundingBoxes.Count == 0)
+		{
+			OnForceNewBoundingBoxCollection?.Invoke(this, EventArgs.Empty);
+		}
 	}
 
 	public void GotoImage(int imageId)
 	{
-		CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 1, ClassName = "ballon", Tlx = 300, Tly = 350, Width = 600, Height = 200, Color = "#00FF00" });
+		//CurrentImageBoundingBoxes.Add(new BoundingBox { ClassId = 1, ClassName = "ballon", Tlx = 300, Tly = 350, Width = 600, Height = 200, Color = "#00FF00" });
 		if (ImagesPaths.Count == 0)
 			return;
 		var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count);
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]);
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(imageId);
+		if (CurrentImageBoundingBoxes.Count == 0)
+		{
+			OnForceNewBoundingBoxCollection?.Invoke(this, EventArgs.Empty);
+		}
 	}
 
 	public void OnImageLeftClickedReceived(Point point)
@@ -199,42 +230,40 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
 	[RelayCommand]
-	private void ToggleSwitchChecked(bool isChecked)
+	private void ToggleSwitchChecked()
 	{
-		CurrentImageBoundingBoxes.ToList().ForEach(bbox => bbox.EditingEnabled = isChecked);
+		CurrentImageBoundingBoxes.ToList().ForEach(bbox => bbox.EditingEnabled = ResizingBoundingBoxEnabled);
 	}
 
-	public void OnEditBoundingBoxClicked(BoundingBox boundingBox, bool editEnabled)
-	{
-		foreach (var box in CurrentImageBoundingBoxes)
-		{
-			box.EditingEnabled = false;
-		}
-		if (boundingBox != null)
-		{
-			boundingBox.EditingEnabled = editEnabled;
-		}
-	}
 	public void OnCanvasPointerPressed(Point position)
 	{
 		if (!isDrawingNewBoundingBox)
 		{
-			startPoint = position;
-			newBoundingBox = new BoundingBox
+			if (selectedLabel != null)
 			{
-				Tlx = position.X - 2,
-				Tly = position.Y - 2,
-				Width = 0,
-				Height = 0,
-				Color = "#AA00FF",
-				ClassName = "COUCOU",
-			};
-			CurrentImageBoundingBoxes.Add(newBoundingBox);
+				startPoint = position;
+				newBoundingBox = new BoundingBox
+				{
+					ClassId = selectedLabel.Id,
+					Tlx = position.X, // Take into account the stroke thickness?
+					Tly = position.Y, // Take into account the stroke thickness?
+					Width = 1,
+					Height = 1,
+					Color = selectedLabel.Color,
+					ClassName = selectedLabel.Name,
+					EditingEnabled = ResizingBoundingBoxEnabled,
+				};
+				CurrentImageBoundingBoxes.Add(newBoundingBox);
+			}
 			isDrawingNewBoundingBox = true;
 		}
 		else
 		{
 			isDrawingNewBoundingBox = false;
+			if (newBoundingBox != null)
+			{
+				databaseService.AddBoundingBox(newBoundingBox, CurrentImageIndex);
+			}
 			newBoundingBox = null;
 		}
 	}

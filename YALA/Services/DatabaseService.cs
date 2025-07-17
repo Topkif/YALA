@@ -15,7 +15,7 @@ public class DatabaseService
 {
 	public IDbConnection? connection;
 	public string absolutePath = "";
-	
+
 	public void Initialize(string dbPath)
 	{
 		connection = new SqliteConnection($"Data Source={dbPath}");
@@ -103,7 +103,6 @@ public class DatabaseService
 		return colorHex ?? string.Empty;
 	}
 
-
 	public ObservableCollection<LabelingClass> GetLabellingClasses()
 	{
 		var labellingClasses = connection?.Query<LabelingClass>("SELECT Id, Name, Color FROM Classes").ToList();
@@ -133,6 +132,37 @@ public class DatabaseService
 			return new ObservableCollection<string>(imagesPaths);
 		}
 		return new ObservableCollection<string>();
+	}
+
+	public void AddBoundingBox(BoundingBox boundingBox, int imageId)
+	{
+		var sql = @"
+			INSERT INTO Annotations (ImageId, ClassId, X, Y, Width, Height)
+			VALUES( @ImageId, @ClassId, @X, @Y, @Width, @Height);";
+		using var transaction = connection?.BeginTransaction();
+		connection?.Execute(sql, new
+		{
+			ImageId = imageId,
+			ClassId = boundingBox.ClassId,
+			X = boundingBox.Tlx,
+			Y = boundingBox.Tly,
+			Width = boundingBox.Width,
+			Height = boundingBox.Height,
+		}, transaction);
+		transaction?.Commit();
+	}
+
+	public ObservableCollection<BoundingBox> GetBoundingBoxes(int imageId)
+	{
+		var boundingBoxes = connection?.Query<BoundingBox>(@"
+			SELECT *
+			FROM Annotations
+			WHERE ImageId = @ImageId;", new { ImageId = imageId }).ToList();
+		if (boundingBoxes != null)
+		{
+			return new ObservableCollection<BoundingBox>(boundingBoxes);
+		}
+		return new ObservableCollection<BoundingBox>();
 	}
 
 }

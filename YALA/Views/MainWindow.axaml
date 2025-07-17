@@ -52,7 +52,8 @@
 				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
 					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
-					<ToggleButton Classes="icon-button" ToolTip.Tip="Rectangle Tool" Content="SquarePen"/>
+					<ToggleButton Classes="icon-button" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen"/>
+					<ToggleButton Classes="icon-button" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
 					<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ResetZoomButtonClicked"/>
 				</StackPanel>
@@ -151,19 +152,18 @@
 						</StackPanel>
 					</Border>
 
-
 					<!-- Annotations -->
 					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
 						<StackPanel Spacing="8">
-							<StackPanel Orientation="Horizontal" Spacing="10">
-								<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
-								<CheckBox Checked="ShowAllEditingThumbsChecked" Unchecked="ShowAllEditingThumbsUnchecked" Content="Always show resize thumbs" IsChecked="true" />
-							</StackPanel>
+							<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
 							<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
 								<ItemsControl.ItemTemplate>
 									<DataTemplate>
-										<Border Background="{DynamicResource PanelBackgroundBrush}" Padding="8" CornerRadius="5" Margin="0,0,0,4">
-											<Grid ColumnDefinitions="Auto,*,Auto">
+										<ToggleButton Classes="class-button" IsChecked="{Binding IsSelected}"
+													  Checked="OnAnnotationChecked" Unchecked="OnAnnotationUnchecked"
+													  Padding="8" CornerRadius="5" Margin="0,0,0,4"
+												HorizontalAlignment="Stretch">
+											<Grid ColumnDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch">
 												<Rectangle Width="16" Height="16"
 														   Fill="{Binding Color, Converter={StaticResource HexToBrushConverter}}"
 														   Margin="0,0,8,0"/>
@@ -181,23 +181,19 @@
 													</TextBlock>
 												</StackPanel>
 												<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
-													<Button Classes="icon-button" ToolTip.Tip="Edit" Content="Pencil"
-															Click="OnEditBoundingBoxClicked" Tag="{Binding}"/>
 													<Button Classes="icon-button"
 															ToolTip.Tip="Delete"
 															Content="Trash2"
 															Click="OnDeleteBoundingBoxClicked"
 															Tag="{Binding}" />
-
 												</StackPanel>
 											</Grid>
-										</Border>
+										</ToggleButton>
 									</DataTemplate>
 								</ItemsControl.ItemTemplate>
 							</ItemsControl>
 						</StackPanel>
 					</Border>
-
 				</StackPanel>
 			</ScrollViewer>
 		</Grid>

@@ -16,4 +16,5 @@ public partial class BoundingBox : ObservableObject
 	[ObservableProperty] int classId;
 	[ObservableProperty] string className = "";
 	[ObservableProperty] bool editingEnabled;
+	[ObservableProperty] bool isSelected;
 }
