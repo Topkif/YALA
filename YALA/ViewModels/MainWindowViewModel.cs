@@ -9,6 +9,8 @@ using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -22,7 +24,6 @@ namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
 	[ObservableProperty] ObservableCollection<LabelingClass> labelingClasses = new();
-	[ObservableProperty] ObservableCollection<BoundingBox> currentImageBoundingBoxes = new();
 	[ObservableProperty] ObservableCollection<string> imagesPaths = new();
 	[ObservableProperty] int currentImageIndex = 1;
 	[ObservableProperty] string currentImageAbsolutePath = "";
@@ -42,7 +43,39 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	DatabaseService databaseService = new();
 
-	public event EventHandler? OnForceNewBoundingBoxCollection;
+
+	public event PropertyChangedEventHandler? PropertyChanged;
+
+	private ObservableCollection<BoundingBox> _currentImageBoundingBoxes = new();
+	public ObservableCollection<BoundingBox> CurrentImageBoundingBoxes
+	{
+		get => _currentImageBoundingBoxes;
+		set
+		{
+			if (_currentImageBoundingBoxes != value)
+			{
+				if (_currentImageBoundingBoxes != null)
+					_currentImageBoundingBoxes.CollectionChanged -= OnBoundingBoxesCollectionChanged;
+
+				_currentImageBoundingBoxes = value;
+
+				if (_currentImageBoundingBoxes != null)
+					_currentImageBoundingBoxes.CollectionChanged += OnBoundingBoxesCollectionChanged;
+
+				OnPropertyChanged(nameof(CurrentImageBoundingBoxes));
+				BoundingBoxesChanged?.Invoke();
+			}
+		}
+	}
+
+	public event Action? BoundingBoxesChanged;
+
+	private void OnBoundingBoxesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+	{
+		BoundingBoxesChanged?.Invoke();
+	}
+	protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name)); 
+	
 	public MainWindowViewModel()
 	{
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
@@ -135,11 +168,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageIndex = Math.Min(ImagesPaths.Count, CurrentImageIndex + 1);
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex);
-		if (CurrentImageBoundingBoxes.Count == 0)
-		{
-			OnForceNewBoundingBoxCollection?.Invoke(this, EventArgs.Empty);
-		}
+		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex, ResizingBoundingBoxEnabled);
 	}
 
 	[RelayCommand]
@@ -150,11 +179,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageIndex = Math.Max(1, CurrentImageIndex - 1);
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex);
-		if (CurrentImageBoundingBoxes.Count == 0)
-		{
-			OnForceNewBoundingBoxCollection?.Invoke(this, EventArgs.Empty);
-		}
+		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex, ResizingBoundingBoxEnabled);
 	}
 
 	public void GotoImage(int imageId)
@@ -165,11 +190,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count);
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]);
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(imageId);
-		if (CurrentImageBoundingBoxes.Count == 0)
-		{
-			OnForceNewBoundingBoxCollection?.Invoke(this, EventArgs.Empty);
-		}
+		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(imageId, ResizingBoundingBoxEnabled);
 	}
 
 	public void OnImageLeftClickedReceived(Point point)
@@ -251,7 +272,7 @@ public partial class MainWindowViewModel : ViewModelBase
 					Height = 1,
 					Color = selectedLabel.Color,
 					ClassName = selectedLabel.Name,
-					EditingEnabled = ResizingBoundingBoxEnabled,
+					EditingEnabled = false, // Otherwise it tries to resize itself when creating
 				};
 				CurrentImageBoundingBoxes.Add(newBoundingBox);
 			}
@@ -262,6 +283,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			isDrawingNewBoundingBox = false;
 			if (newBoundingBox != null)
 			{
+				newBoundingBox.EditingEnabled = ResizingBoundingBoxEnabled;
 				databaseService.AddBoundingBox(newBoundingBox, CurrentImageIndex);
 			}
 			newBoundingBox = null;

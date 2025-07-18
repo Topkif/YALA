@@ -36,7 +36,7 @@ public partial class MainWindow : Window
 	{
 		InitializeComponent();
 		DataContext = viewModel;
-		viewModel.CurrentImageBoundingBoxes.CollectionChanged += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
+		viewModel.BoundingBoxesChanged += () => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 		//viewModel.OnForceNewBoundingBoxCollection += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		ImageIndexTextBox.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);

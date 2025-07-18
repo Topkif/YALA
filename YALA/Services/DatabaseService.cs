@@ -152,14 +152,23 @@ public class DatabaseService
 		transaction?.Commit();
 	}
 
-	public ObservableCollection<BoundingBox> GetBoundingBoxes(int imageId)
+	public ObservableCollection<BoundingBox> GetBoundingBoxes(int imageId, bool editingEnabled)
 	{
 		var boundingBoxes = connection?.Query<BoundingBox>(@"
-			SELECT *
-			FROM Annotations
-			WHERE ImageId = @ImageId;", new { ImageId = imageId }).ToList();
+			SELECT 
+			A.ClassId,
+			A.X Tlx,
+			A.Y Tly,
+			A.Width,
+			A.Height,
+			(SELECT Name FROM Classes C WHERE C.Id = A.ClassId) AS ClassName,
+			(SELECT Color FROM Classes C WHERE C.Id = A.ClassId) AS Color
+			FROM Annotations A
+			WHERE A.ImageId = @ImageId;", new { ImageId = imageId }).ToList();
 		if (boundingBoxes != null)
 		{
+			foreach (var box in boundingBoxes)
+				box.EditingEnabled = editingEnabled;
 			return new ObservableCollection<BoundingBox>(boundingBoxes);
 		}
 		return new ObservableCollection<BoundingBox>();
