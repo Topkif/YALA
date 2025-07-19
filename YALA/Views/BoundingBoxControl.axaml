@@ -8,7 +8,7 @@
 		<conv:HexToBrushConverter x:Key="HexToBrushConverter" />
 		<conv:BoolToIsVisibleConverter x:Key="BoolToIsVisibleConverter" />
 		<conv:SelectedToFillBrushConverter x:Key="SelectedToFillBrushConverter" />
-		<x:Double x:Key="StrokeSize">2</x:Double>
+		<conv:MarginPositionConverter x:Key="MarginPositionConverter" />
 
 		<ControlTemplate x:Key="ThumbTemplate" TargetType="Thumb">
 			<Border Background="{TemplateBinding Background}"
@@ -16,15 +16,16 @@
                     BorderThickness="{TemplateBinding BorderThickness}"
                     CornerRadius="3" />
 		</ControlTemplate>
+
 	</UserControl.Resources>
 
-	<Grid Margin="0">
+	<Grid>
 		<!-- Rectangle -->
 		<Rectangle
             Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-            StrokeThickness="{StaticResource StrokeSize}" >
+		    StrokeThickness="{Binding RealBoundingBoxStrokeSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}" >
 			<Rectangle.Fill>
 				<MultiBinding Converter="{StaticResource SelectedToFillBrushConverter}" ConverterParameter="0.2">
 					<Binding Path="BoundingBox.IsSelected" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
@@ -37,8 +38,9 @@
 		<Thumb Name="TopThumb"
 			   Cursor="SizeNorthSouth"
                Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-			   Height="8"
-               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
+			   Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Top}"
+		       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Center" VerticalAlignment="Top"
                Template="{StaticResource ThumbTemplate}"
                DragStarted="OnThumbDragStarted"
@@ -50,7 +52,8 @@
 		<Thumb Name="BottomThumb"
 			   Cursor="SizeNorthSouth"
                Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-			   Height="8"
+			   Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Bottom}"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Center" VerticalAlignment="Bottom"
                Template="{StaticResource ThumbTemplate}"
@@ -62,8 +65,9 @@
 		<!-- Vertical Left -->
 		<Thumb Name="LeftThumb"
 			   Cursor="SizeWestEast"
-               Width="8"
+			   Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
                Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Left}"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Left" VerticalAlignment="Center"
                Template="{StaticResource ThumbTemplate}"
@@ -75,8 +79,9 @@
 		<!-- Vertical Right -->
 		<Thumb Name="RightThumb"
 			   Cursor="SizeWestEast"
-               Width="8"
+			   Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
                Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Right}"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Right" VerticalAlignment="Center"
                Template="{StaticResource ThumbTemplate}"

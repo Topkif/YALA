@@ -32,6 +32,14 @@ public partial class MainWindow : Window
 				$" {Math.Clamp(Math.Floor(value.Y),1,viewModel.CurrentImageBitmap.Size.Height)}";
 		}
 	}
+	
+	const double boundingBoxStrokeSize = 3.0;
+	const double boundingBoxThumbSize = 20.0;
+	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX;
+	public double RealBoundingBoxThumbSize => boundingBoxThumbSize / ZoomBorder.ZoomX;
+	public double MinusRealBoundingBoxMargin => -(RealBoundingBoxThumbSize - RealBoundingBoxStrokeSize)/ 2;
+
+
 	private readonly MainWindowViewModel viewModel = App.MainVM;
 	public MainWindow()
 	{
@@ -48,6 +56,7 @@ public partial class MainWindow : Window
 
 		foreach (var bbox in viewModel.CurrentImageBoundingBoxes)
 		{
+			bbox.StrokeScaleFactor = ZoomBorder.ZoomX; // Stroke of 3 pixels by default at 100% zoom
 			var control = new BoundingBoxControl
 			{
 				BoundingBox = bbox
@@ -67,6 +76,12 @@ public partial class MainWindow : Window
 			BoundingBoxesCanvas.Children.Add(control);
 		}
 	}
+
+	private void OnZoomChanged(object? sender, ZoomChangedEventArgs e)
+	{
+		UpdateBoundingBoxes();
+	}
+
 	private static void OnTextInput(object? sender, TextInputEventArgs e)
 	{
 		if (!int.TryParse(e.Text, out _))
