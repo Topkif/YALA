@@ -55,7 +55,7 @@
 					<ToggleButton Classes="icon-button" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen"/>
 					<ToggleButton Classes="icon-button" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
-					<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ResetZoomButtonClicked"/>
+					<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>
 				</StackPanel>
 			</Grid>
 		</Border>
@@ -71,16 +71,25 @@
 			<Grid Grid.Column="0">
 				<ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
 					<paz:ZoomBorder Name="ZoomBorder" Stretch="None" ZoomSpeed="1.2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-						<Grid x:Name="ImageLayer">
-							<Viewbox Stretch="Uniform">
+						<Grid x:Name="ImageLayer" SizeChanged="ZoomExtentsCanva">
+							<Viewbox Stretch="Uniform" UseLayoutRounding="False">
 								<Grid>
-									<Image x:Name="MainImage"
-										   Source="{Binding CurrentImageBitmap}"/>
-									<Canvas x:Name="BoundingBoxesCanvas"
-											Background="Transparent"
-											PointerPressed="BoundingBoxesCanvas_PointerPressed"
-											PointerMoved="BoundingBoxesCanvas_PointerMoved"/>
+									<Border Background="#01FFFFFF"
+										PointerPressed="BoundingBoxesCanvas_PointerPressed"
+										PointerMoved="BoundingBoxesCanvas_PointerMoved"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center">
+										<!--Add a margin to still trigger Pointer moved events event outside canvas-->
+										<Grid Margin="200">
+											<Image x:Name="MainImage"
+												   Source="{Binding CurrentImageBitmap}" />
+											<Canvas x:Name="BoundingBoxesCanvas"
+													Width="{Binding CurrentImageBitmap.PixelSize.Width}"
+													Height="{Binding CurrentImageBitmap.PixelSize.Height}" />
+										</Grid>
+									</Border>
 								</Grid>
+
 							</Viewbox>
 						</Grid>
 					</paz:ZoomBorder>

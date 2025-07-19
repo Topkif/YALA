@@ -28,7 +28,7 @@ public partial class MainWindow : Window
 		set
 		{
 			lastMousePosition = value;
-			MousePositionLabel.Content = $"({(int)value.X}, {(int)value.Y})";
+			MousePositionLabel.Content = $"({Math.Round(value.X)}, {Math.Round(value.Y)})";
 		}
 	}
 	private readonly MainWindowViewModel viewModel = App.MainVM;
@@ -233,20 +233,26 @@ public partial class MainWindow : Window
 
 	private void BoundingBoxesCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
 	{
-		var point = e.GetPosition((Canvas)sender!);
-		viewModel.OnCanvasPointerPressed(point);
+		if (e.Properties.IsLeftButtonPressed)
+		{
+			var point = e.GetPosition((Border)sender!);
+			viewModel.OnCanvasPointerPressed(point - new Point(200, 200));
+		}
 	}
 
 	private void BoundingBoxesCanvas_PointerMoved(object? sender, PointerEventArgs e)
 	{
-		var point = e.GetPosition((Canvas)sender!);
-		LastMousePosition = point; // Store last mouse position
-		viewModel.OnCanvasPointerMoved(point);
+		var point = e.GetPosition((Border)sender!);
+		LastMousePosition = point - new Point(200, 200);
+		; // Store last mouse position
+		viewModel.OnCanvasPointerMoved(point - new Point(200, 200));
 	}
 
-	private void ResetZoomButtonClicked(object? sender, RoutedEventArgs e)
+	private void ZoomExtentsCanva(object? sender, RoutedEventArgs e)
 	{
 		ZoomBorder.ResetMatrix();
+		double ratio = Math.Max(ImageLayer.Bounds.Width /MainImage.Bounds.Width , ImageLayer.Bounds.Height/ MainImage.Bounds.Height);
+		ZoomBorder.ZoomTo(ratio, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
 	}
 	private void OnAnnotationChecked(object? sender, RoutedEventArgs e)
 	{

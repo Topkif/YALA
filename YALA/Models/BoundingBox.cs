@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace YALA.Models;
+
 public partial class BoundingBox : ObservableObject
 {
 	[ObservableProperty] double tlx; // Top Left X coordinate
