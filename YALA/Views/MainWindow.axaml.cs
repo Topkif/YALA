@@ -29,14 +29,14 @@ public partial class MainWindow : Window
 		{
 			lastMousePosition = value;
 			MousePositionLabel.Content = $"({Math.Clamp(Math.Floor(value.X),1,viewModel.CurrentImageBitmap.Size.Width)}," +
-				$" {Math.Clamp(Math.Floor(value.Y),1,viewModel.CurrentImageBitmap.Size.Height)}";
+				$" {Math.Clamp(Math.Floor(value.Y),1,viewModel.CurrentImageBitmap.Size.Height)})";
 		}
 	}
 	
 	const double boundingBoxStrokeSize = 3.0;
 	const double boundingBoxThumbSize = 20.0;
-	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX;
-	public double RealBoundingBoxThumbSize => boundingBoxThumbSize / ZoomBorder.ZoomX;
+	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX/(1000/viewModel.CurrentImageBitmap.Size.Width);
+	public double RealBoundingBoxThumbSize => boundingBoxThumbSize / ZoomBorder.ZoomX/(1000/viewModel.CurrentImageBitmap.Size.Width);
 	public double MinusRealBoundingBoxMargin => -(RealBoundingBoxThumbSize - RealBoundingBoxStrokeSize)/ 2;
 
 
@@ -263,7 +263,7 @@ public partial class MainWindow : Window
 				double uniformScale = Math.Min(scaleX, scaleY);
 
 				LastMousePosition = (mousePosInWindow - canvasOffset)/ZoomBorder.ZoomY/uniformScale;
-				viewModel.OnCanvasPointerMoved(LastMousePosition);
+				viewModel.OnPointerMoved(LastMousePosition);
 			}
 		}
 	}
@@ -271,7 +271,7 @@ public partial class MainWindow : Window
 	{
 		if (e.Properties.IsLeftButtonPressed)
 		{
-			viewModel.OnCanvasPointerPressed(LastMousePosition);
+			viewModel.OnPointerPressed(LastMousePosition);
 		}
 	}
 

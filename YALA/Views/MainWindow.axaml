@@ -58,6 +58,7 @@
 					<ToggleButton Classes="icon-button" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
 					<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>
+					<Button Classes="icon-button" ToolTip.Tip="Remove Current Image From Project" Content="Trash2" Command="{Binding RemoveCurrentImageFromProjectCommand}" Tag="{Binding}" />
 				</StackPanel>
 			</Grid>
 		</Border>
@@ -156,7 +157,10 @@
 					<!-- Annotations -->
 					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
 						<StackPanel Spacing="8">
-							<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"/>
+							<Grid ColumnDefinitions="Auto,*">
+								<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"  VerticalAlignment="Center"/>
+								<Button Grid.Column="1" Classes="icon-button" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip.Tip="Delete Current Image Annotations" Content="Trash2" Command="{Binding DeleteAllImageBoundingBoxCommand}" Tag="{Binding}" />
+							</Grid>
 							<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
 								<ItemsControl.ItemTemplate>
 									<DataTemplate>

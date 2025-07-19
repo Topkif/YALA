@@ -25,7 +25,7 @@ public class DatabaseService
 		connection.Execute(@"
             CREATE TABLE IF NOT EXISTS Images (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Path TEXT NOT NULL
+                Path TEXT NOT NULL UNIQUE
             );
 
             CREATE TABLE IF NOT EXISTS Classes (
@@ -108,6 +108,7 @@ public class DatabaseService
 		var labellingClasses = connection?.Query<LabelingClass>("SELECT Id, Name, Color FROM Classes").ToList();
 		if (labellingClasses != null)
 		{
+			labellingClasses.First().IsSelected = true;
 			return new ObservableCollection<LabelingClass>(labellingClasses);
 		}
 		return new ObservableCollection<LabelingClass>();
@@ -124,6 +125,21 @@ public class DatabaseService
 		}
 		transaction?.Commit();
 	}
+	public void RemoveImage(string path)
+	{
+		const string deleteAnnotations = @"
+		DELETE FROM Annotations
+		WHERE ImageId = (SELECT Id FROM Images WHERE Path = @Path);";
+
+		const string deleteImage = "DELETE FROM Images WHERE Path = @Path;";
+
+		using var transaction = connection?.BeginTransaction();
+		connection?.Execute(deleteAnnotations, new { Path = path }, transaction);
+		connection?.Execute(deleteImage, new { Path = path }, transaction);
+		transaction?.Commit();
+	}
+
+
 	public ObservableCollection<string> GetImagesPaths()
 	{
 		var imagesPaths = connection?.Query<string>("SELECT Path FROM Images").ToList();
@@ -134,15 +150,42 @@ public class DatabaseService
 		return new ObservableCollection<string>();
 	}
 
-	public void AddBoundingBox(BoundingBox boundingBox, int imageId)
+	public void AddBoundingBox(BoundingBox boundingBox, string imagePath)
+	{
+		const string getImageIdSql = "SELECT Id FROM Images WHERE Path = @Path;";
+		const string insertAnnotationSql = @"
+		INSERT INTO Annotations (ImageId, ClassId, X, Y, Width, Height)
+		VALUES (@ImageId, @ClassId, @X, @Y, @Width, @Height);";
+
+		using var transaction = connection?.BeginTransaction();
+
+		var imageId = connection?.ExecuteScalar<int?>(getImageIdSql, new { Path = imagePath }, transaction);
+		if (imageId is null)
+			throw new InvalidOperationException($"Image path '{imagePath}' not found in database.");
+
+		connection?.Execute(insertAnnotationSql, new
+		{
+			ImageId = imageId,
+			ClassId = boundingBox.ClassId,
+			X = boundingBox.Tlx,
+			Y = boundingBox.Tly,
+			Width = boundingBox.Width,
+			Height = boundingBox.Height
+		}, transaction);
+
+		transaction?.Commit();
+	}
+
+	public void RemoveBoundingBox(BoundingBox boundingBox, string imagePath)
 	{
 		var sql = @"
-			INSERT INTO Annotations (ImageId, ClassId, X, Y, Width, Height)
-			VALUES( @ImageId, @ClassId, @X, @Y, @Width, @Height);";
+		DELETE FROM Annotations
+		WHERE ImageId = (SELECT Id FROM Images WHERE Path = @Path)
+		  AND ClassId = @ClassId AND X = @X AND Y = @Y AND Width = @Width AND Height = @Height;";
 		using var transaction = connection?.BeginTransaction();
 		connection?.Execute(sql, new
 		{
-			ImageId = imageId,
+			Path = imagePath,
 			ClassId = boundingBox.ClassId,
 			X = boundingBox.Tlx,
 			Y = boundingBox.Tly,
@@ -152,19 +195,31 @@ public class DatabaseService
 		transaction?.Commit();
 	}
 
-	public ObservableCollection<BoundingBox> GetBoundingBoxes(int imageId, bool editingEnabled)
+	public void RemoveAllImagesBoundingBoxes(string imagePath)
+	{
+		var sql = @"
+		DELETE FROM Annotations
+		WHERE ImageId = (SELECT Id FROM Images WHERE Path = @Path);";
+		using var transaction = connection?.BeginTransaction();
+		connection?.Execute(sql, new { Path = imagePath }, transaction);
+		transaction?.Commit();
+	}
+
+	public ObservableCollection<BoundingBox> GetBoundingBoxes(string imagePath, bool editingEnabled)
 	{
 		var boundingBoxes = connection?.Query<BoundingBox>(@"
-			SELECT 
-			A.ClassId,
-			A.X Tlx,
-			A.Y Tly,
-			A.Width,
-			A.Height,
-			(SELECT Name FROM Classes C WHERE C.Id = A.ClassId) AS ClassName,
-			(SELECT Color FROM Classes C WHERE C.Id = A.ClassId) AS Color
-			FROM Annotations A
-			WHERE A.ImageId = @ImageId;", new { ImageId = imageId }).ToList();
+		SELECT 
+		A.ClassId,
+		A.X Tlx,
+		A.Y Tly,
+		A.Width,
+		A.Height,
+		(SELECT Name FROM Classes C WHERE C.Id = A.ClassId) AS ClassName,
+		(SELECT Color FROM Classes C WHERE C.Id = A.ClassId) AS Color
+		FROM Annotations A
+		WHERE A.ImageId = (SELECT Id FROM Images WHERE Path = @Path);",
+			new { Path = imagePath }).ToList();
+
 		if (boundingBoxes != null)
 		{
 			foreach (var box in boundingBoxes)
@@ -173,5 +228,6 @@ public class DatabaseService
 		}
 		return new ObservableCollection<BoundingBox>();
 	}
+
 
 }

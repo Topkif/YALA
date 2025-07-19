@@ -74,8 +74,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		// Load some default values to test
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
-		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 23, IsSelected = false });
-		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 45, IsSelected = true });
+		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 23, IsSelected = true });
+		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 45, IsSelected = false });
 		selectedLabel = LabelingClasses.FirstOrDefault(x => x.IsSelected);
 		CurrentImageBoundingBoxes = new();
 	}
@@ -106,10 +106,14 @@ public partial class MainWindowViewModel : ViewModelBase
 			databaseService.Initialize(path);
 		}
 		LabelingClasses = databaseService.GetLabellingClasses();
+		selectedLabel = LabelingClasses.FirstOrDefault(x => x.IsSelected == true);
 		ImagesPaths = databaseService.GetImagesPaths();
 		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
 		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex, ResizingBoundingBoxEnabled);
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		{
+			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+		}
 	}
 
 	[RelayCommand]
@@ -159,43 +163,52 @@ public partial class MainWindowViewModel : ViewModelBase
 	[RelayCommand]
 	private void NextImage()
 	{
-		if (ImagesPaths.Count == 0)
-			return;
-		CurrentImageIndex = Math.Min(ImagesPaths.Count, CurrentImageIndex + 1);
-		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
-		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex, ResizingBoundingBoxEnabled);
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		{
+			CurrentImageIndex = Math.Min(ImagesPaths.Count, CurrentImageIndex + 1);
+			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
+			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+		}
 	}
 
 	[RelayCommand]
 	private void PreviousImage()
 	{
-		if (ImagesPaths.Count == 0)
-			return;
-		CurrentImageIndex = Math.Max(1, CurrentImageIndex - 1);
-		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
-		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(CurrentImageIndex, ResizingBoundingBoxEnabled);
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		{
+			CurrentImageIndex = Math.Max(1, CurrentImageIndex - 1);
+			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
+			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+		}
+	}
+
+	[RelayCommand]
+	private void RemoveCurrentImageFromProject()
+	{
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		{
+			databaseService.RemoveImage(ImagesPaths[CurrentImageIndex-1]);
+			CurrentImageBoundingBoxes.Clear();
+			ImagesPaths = databaseService.GetImagesPaths();
+			if (ImagesPaths.Count == 0)
+				return;
+			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex-1]); // Load the first image by default
+			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+		}
+
 	}
 
 	public void GotoImage(int imageId)
 	{
-		if (ImagesPaths.Count == 0)
-			return;
-		var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count);
-		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]);
-		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(imageId, ResizingBoundingBoxEnabled);
-	}
-
-	public void OnImageLeftClickedReceived(Point point)
-	{
-		;
-	}
-
-	public void OnImageRightClickedReceived(Point point)
-	{
-		;
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
+		{
+			var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count);
+			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]);
+			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[clampedIndex - 1], ResizingBoundingBoxEnabled);
+		}
 	}
 
 	public void OnThumbDragStarted(BoundingBox resizedBoundingBox, ResizeDirection direction)
@@ -242,7 +255,29 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public void DeleteBoundingBox(BoundingBox boundingBox)
 	{
-		CurrentImageBoundingBoxes.Remove(boundingBox);
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		{
+			CurrentImageBoundingBoxes.Remove(boundingBox);
+			databaseService.RemoveBoundingBox(boundingBox, ImagesPaths[CurrentImageIndex-1]);
+		}
+		else
+		{
+			CurrentImageBoundingBoxes.Remove(boundingBox);
+		}
+	}
+
+	[RelayCommand]
+	private void DeleteAllImageBoundingBox()
+	{
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		{
+			CurrentImageBoundingBoxes.Clear();
+			databaseService.RemoveAllImagesBoundingBoxes(ImagesPaths[CurrentImageIndex-1]);
+		}
+		else
+		{ 
+			CurrentImageBoundingBoxes.Clear();
+		}
 	}
 
 	[RelayCommand]
@@ -251,10 +286,18 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageBoundingBoxes.ToList().ForEach(bbox => bbox.EditingEnabled = ResizingBoundingBoxEnabled);
 	}
 
-	public void OnCanvasPointerPressed(Point position)
+	public void OnPointerPressed(Point position)
 	{
 		if (!isDrawingNewBoundingBox)
 		{
+			// Check if pointer is inside the CurrentImageBitmap within threshold
+			double threshold = 20.0; // Threshold to start drawing a BoundingBox in Pixels
+			if (position.X < -threshold || position.Y < -threshold ||
+				position.X >= CurrentImageBitmap.Size.Width + threshold ||
+				position.Y >= CurrentImageBitmap.Size.Height + threshold)
+				return;
+
+
 			if (selectedLabel != null)
 			{
 				startPoint = position;
@@ -279,13 +322,16 @@ public partial class MainWindowViewModel : ViewModelBase
 			if (newBoundingBox != null)
 			{
 				newBoundingBox.EditingEnabled = ResizingBoundingBoxEnabled;
-				databaseService.AddBoundingBox(newBoundingBox, CurrentImageIndex);
+				if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+				{
+					databaseService.AddBoundingBox(newBoundingBox, ImagesPaths[CurrentImageIndex - 1]);
+				}
 			}
 			newBoundingBox = null;
 		}
 	}
 
-	public void OnCanvasPointerMoved(Point position)
+	public void OnPointerMoved(Point position)
 	{
 		if (!isDrawingNewBoundingBox || newBoundingBox == null)
 			return;

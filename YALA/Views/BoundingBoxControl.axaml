@@ -22,6 +22,7 @@
 	<Grid>
 		<!-- Rectangle -->
 		<Rectangle
+			IsHitTestVisible="False"
             Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
