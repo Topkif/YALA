@@ -113,7 +113,7 @@ public partial class MainWindow : Window
 				AllowMultiple = false,
 				FileTypeFilter = new[]
 			{
-				new FilePickerFileType("Class Files") { Patterns = new[] { "*.txt", "*.names", "*" } }
+				new FilePickerFileType("Class Files") { Patterns = new[] { "*.yalac", "*.txt", "*.names", "*" } }
 			}
 			});
 
@@ -147,6 +147,29 @@ public partial class MainWindow : Window
 		{
 			string path = files[0].Path.LocalPath;
 			viewModel.OpenExistingProject(path);
+		}
+	}
+	private async void OnExportClassesClicked(object sender, RoutedEventArgs e)
+	{
+		var topLevel = GetTopLevel(this);
+		if (topLevel == null)
+			return;
+
+		var classFile = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+		{
+			Title = "Create project class names file",
+			DefaultExtension = "yalac",
+			SuggestedFileName = "project_classes.yalac",
+			FileTypeChoices = new[]
+			{
+			new FilePickerFileType("YALA Classes") { Patterns = new[] { "*.yalac" } }
+		}
+		});
+
+		if (classFile != null)
+		{
+			string path = classFile.Path.LocalPath;
+			viewModel.ExportProjectClasses(path);
 		}
 	}
 

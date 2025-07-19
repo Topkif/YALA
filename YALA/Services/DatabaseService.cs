@@ -38,8 +38,8 @@ public class DatabaseService
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ImageId INTEGER NOT NULL,
                 ClassId INTEGER NOT NULL,
-                X REAL NOT NULL,
-                Y REAL NOT NULL,
+                Tlx REAL NOT NULL,
+                Tly REAL NOT NULL,
                 Width REAL NOT NULL,
                 Height REAL NOT NULL,
                 FOREIGN KEY (ImageId) REFERENCES Images(Id),
@@ -84,6 +84,17 @@ public class DatabaseService
 		}
 		transaction?.Commit();
 	}
+	public void AddClasses(List<(string, string)> classes)
+	{
+		var sql = "INSERT INTO Classes (Name, Color) VALUES (@Name, @Color);";
+
+		using var transaction = connection?.BeginTransaction();
+		foreach (var className in classes)
+		{
+			connection?.Execute(sql, new { Name = className.Item1, Color = className.Item2 }, transaction);
+		}
+		transaction?.Commit();
+	}
 
 	public void SetClassColor(string className, string colorHex)
 	{
@@ -102,7 +113,6 @@ public class DatabaseService
 
 		return colorHex ?? string.Empty;
 	}
-
 	public ObservableCollection<LabelingClass> GetLabellingClasses()
 	{
 		var labellingClasses = connection?.Query<LabelingClass>("SELECT Id, Name, Color FROM Classes").ToList();
@@ -154,7 +164,7 @@ public class DatabaseService
 	{
 		const string getImageIdSql = "SELECT Id FROM Images WHERE Path = @Path;";
 		const string insertAnnotationSql = @"
-		INSERT INTO Annotations (ImageId, ClassId, X, Y, Width, Height)
+		INSERT INTO Annotations (ImageId, ClassId, Tlx, Tly, Width, Height)
 		VALUES (@ImageId, @ClassId, @X, @Y, @Width, @Height);";
 
 		using var transaction = connection?.BeginTransaction();
@@ -167,8 +177,8 @@ public class DatabaseService
 		{
 			ImageId = imageId,
 			ClassId = boundingBox.ClassId,
-			X = boundingBox.Tlx,
-			Y = boundingBox.Tly,
+			Tlx = boundingBox.Tlx,
+			Tly = boundingBox.Tly,
 			Width = boundingBox.Width,
 			Height = boundingBox.Height
 		}, transaction);
@@ -187,8 +197,8 @@ public class DatabaseService
 		{
 			Path = imagePath,
 			ClassId = boundingBox.ClassId,
-			X = boundingBox.Tlx,
-			Y = boundingBox.Tly,
+			Tlx = boundingBox.Tlx,
+			Tly = boundingBox.Tly,
 			Width = boundingBox.Width,
 			Height = boundingBox.Height,
 		}, transaction);
@@ -210,8 +220,8 @@ public class DatabaseService
 		var boundingBoxes = connection?.Query<BoundingBox>(@"
 		SELECT 
 		A.ClassId,
-		A.X Tlx,
-		A.Y Tly,
+		A.Tlx,
+		A.Tlx,
 		A.Width,
 		A.Height,
 		(SELECT Name FROM Classes C WHERE C.Id = A.ClassId) AS ClassName,

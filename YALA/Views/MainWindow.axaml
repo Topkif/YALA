@@ -40,6 +40,8 @@
 						<MenuItem Header="Close current" Command="{Binding CloseCurrentProjectCommand}"/>
 						<Separator/>
 						<MenuItem Header="Add images" Click="OnAddImagesClicked" />
+						<Separator/>
+						<MenuItem Header="Export classes" Click="OnExportClassesClicked" />
 					</MenuItem>
 					<MenuItem Header="Inference">
 						<MenuItem Header="Open YOLO .pt"/>

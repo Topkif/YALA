@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using YALA.Models;
 using YALA.Services;
@@ -75,8 +76,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		// Load some default values to test
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
-		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 23, IsSelected = true });
-		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 45, IsSelected = false });
+		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 0, IsSelected = true });
+		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 0, IsSelected = false });
 		selectedLabel = LabelingClasses.FirstOrDefault(x => x.IsSelected);
 		CurrentImageBoundingBoxes = new();
 	}
@@ -90,8 +91,16 @@ public partial class MainWindowViewModel : ViewModelBase
 		else
 		{
 			databaseService.Initialize(dbPath);
-			List<string> classes = ClassesFileParser.ParseClassNames(classesPath);
-			databaseService.AddClasses(classes);
+			if (classesPath.EndsWith(".yalac"))
+			{
+				List<(string, string)> classes = ClassesFileParser.ParseYalaClassNamesAndColor(classesPath);
+				databaseService.AddClasses(classes);
+			}
+			else
+			{
+				List<string> classes = ClassesFileParser.ParseClassNames(classesPath);
+				databaseService.AddClasses(classes);
+			}
 		}
 		LabelingClasses = databaseService.GetLabellingClasses();
 	}
@@ -276,7 +285,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			databaseService.RemoveAllImagesBoundingBoxes(ImagesPaths[CurrentImageIndex-1]);
 		}
 		else
-		{ 
+		{
 			CurrentImageBoundingBoxes.Clear();
 		}
 	}
@@ -384,4 +393,16 @@ public partial class MainWindowViewModel : ViewModelBase
 		newBoundingBox = null;
 	}
 
+	public void ExportProjectClasses(string path)
+	{
+		var classes = databaseService.GetLabellingClasses();
+		if (classes.Count>0)
+		{
+			using var writer = new StreamWriter(path, false, Encoding.UTF8);
+			foreach (var cls in classes)
+			{
+				writer.WriteLine($"{cls.Name};{cls.Color}");
+			}
+		}
+	}
 }
