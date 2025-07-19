@@ -37,6 +37,14 @@ public partial class MainWindow : Window
 		InitializeComponent();
 		DataContext = viewModel;
 		viewModel.BoundingBoxesChanged += () => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
+		viewModel.PropertyChanged += (s, e) =>
+		{
+			if (e.PropertyName == nameof(viewModel.CurrentImageBitmap))
+			{
+				// This will run when CurrentImageIndex is changed.
+				Dispatcher.UIThread.Post(ZoomExtentsCanva);
+			}
+		};
 		//viewModel.OnForceNewBoundingBoxCollection += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		ImageIndexTextBox.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
@@ -251,9 +259,16 @@ public partial class MainWindow : Window
 	private void ZoomExtentsCanva(object? sender, RoutedEventArgs e)
 	{
 		ZoomBorder.ResetMatrix();
-		double ratio = Math.Max(ImageLayer.Bounds.Width /MainImage.Bounds.Width , ImageLayer.Bounds.Height/ MainImage.Bounds.Height);
+		double ratio = Math.Min(Math.Max(ImageLayer.Bounds.Width, MainImage.Bounds.Width+400) /MainImage.Bounds.Width, Math.Max(ImageLayer.Bounds.Height, MainImage.Bounds.Height+400)/ MainImage.Bounds.Height);
 		ZoomBorder.ZoomTo(ratio, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
 	}
+	private void ZoomExtentsCanva()
+	{
+		ZoomBorder.ResetMatrix();
+		double ratio = Math.Min(Math.Max(ImageLayer.Bounds.Width, MainImage.Bounds.Width+400) /MainImage.Bounds.Width, Math.Max(ImageLayer.Bounds.Height, MainImage.Bounds.Height+400)/ MainImage.Bounds.Height);
+		ZoomBorder.ZoomTo(ratio, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
+	}
+
 	private void OnAnnotationChecked(object? sender, RoutedEventArgs e)
 	{
 		if (sender is ToggleButton button && button.DataContext is BoundingBox bb)
