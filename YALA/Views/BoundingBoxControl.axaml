@@ -7,7 +7,6 @@
 	<UserControl.Resources>
 		<conv:HexToBrushConverter x:Key="HexToBrushConverter" />
 		<conv:BoolToIsVisibleConverter x:Key="BoolToIsVisibleConverter" />
-		<conv:AddStrokeConverter x:Key="AddStrokeConverter" />
 		<conv:SelectedToFillBrushConverter x:Key="SelectedToFillBrushConverter" />
 		<x:Double x:Key="StrokeSize">2</x:Double>
 
@@ -19,11 +18,11 @@
 		</ControlTemplate>
 	</UserControl.Resources>
 
-	<Grid Margin="3">
+	<Grid Margin="0">
 		<!-- Rectangle -->
 		<Rectangle
-            Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"
-            Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}, Converter={StaticResource AddStrokeConverter}, ConverterParameter={StaticResource StrokeSize}}"
+            Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+            Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             StrokeThickness="{StaticResource StrokeSize}" >
 			<Rectangle.Fill>
@@ -41,7 +40,6 @@
 			   Height="8"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Center" VerticalAlignment="Top"
-               Margin="0,-3,0,0"
                Template="{StaticResource ThumbTemplate}"
                DragStarted="OnThumbDragStarted"
                DragDelta="OnThumbDragDelta"
@@ -55,7 +53,6 @@
 			   Height="8"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Center" VerticalAlignment="Bottom"
-               Margin="0,0,0,-3"
                Template="{StaticResource ThumbTemplate}"
                DragStarted="OnThumbDragStarted"
                DragDelta="OnThumbDragDelta"
@@ -69,7 +66,6 @@
                Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Left" VerticalAlignment="Center"
-               Margin="-3,0,0,0"
                Template="{StaticResource ThumbTemplate}"
                DragStarted="OnThumbDragStarted"
                DragDelta="OnThumbDragDelta"
@@ -83,7 +79,6 @@
                Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
                Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                HorizontalAlignment="Right" VerticalAlignment="Center"
-               Margin="0,0,-3,0"
                Template="{StaticResource ThumbTemplate}"
                DragStarted="OnThumbDragStarted"
                DragDelta="OnThumbDragDelta"

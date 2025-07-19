@@ -28,7 +28,8 @@ public partial class MainWindow : Window
 		set
 		{
 			lastMousePosition = value;
-			MousePositionLabel.Content = $"({Math.Round(value.X)}, {Math.Round(value.Y)})";
+			MousePositionLabel.Content = $"({Math.Clamp(Math.Floor(value.X),1,viewModel.CurrentImageBitmap.Size.Width)}," +
+				$" {Math.Clamp(Math.Floor(value.Y),1,viewModel.CurrentImageBitmap.Size.Height)}";
 		}
 	}
 	private readonly MainWindowViewModel viewModel = App.MainVM;
@@ -37,15 +38,6 @@ public partial class MainWindow : Window
 		InitializeComponent();
 		DataContext = viewModel;
 		viewModel.BoundingBoxesChanged += () => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
-		viewModel.PropertyChanged += (s, e) =>
-		{
-			if (e.PropertyName == nameof(viewModel.CurrentImageBitmap))
-			{
-				// This will run when CurrentImageIndex is changed.
-				Dispatcher.UIThread.Post(ZoomExtentsCanva);
-			}
-		};
-		//viewModel.OnForceNewBoundingBoxCollection += (_, _) => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		ImageIndexTextBox.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
 	}
@@ -61,15 +53,15 @@ public partial class MainWindow : Window
 				BoundingBox = bbox
 			};
 
-			Canvas.SetLeft(control, bbox.Tlx-2); // Stroke size in View
-			Canvas.SetTop(control, bbox.Tly-2); // Stroke size in View
+			Canvas.SetLeft(control, bbox.Tlx);
+			Canvas.SetTop(control, bbox.Tly);
 
 			bbox.PropertyChanged += (s, e) =>
 			{
 				if (e.PropertyName is nameof(BoundingBox.Tlx))
-					Canvas.SetLeft(control, bbox.Tlx - 2); // Stroke size
+					Canvas.SetLeft(control, bbox.Tlx);
 				else if (e.PropertyName is nameof(BoundingBox.Tly))
-					Canvas.SetTop(control, bbox.Tly - 2); // Stroke size
+					Canvas.SetTop(control, bbox.Tly);
 			};
 
 			BoundingBoxesCanvas.Children.Add(control);
@@ -239,34 +231,39 @@ public partial class MainWindow : Window
 		}
 	}
 
-	private void BoundingBoxesCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
+	private void WindowPointerMoved(object? sender, PointerEventArgs e)
+	{
+		var window = (Window)sender!;
+		Point mousePosInWindow = e.GetPosition(window);
+
+		Point? canvasTopLeftInWindow = BoundingBoxesCanvas.TranslatePoint(new Point(0, 0), window);
+		if (canvasTopLeftInWindow is { } canvasOffset)
+		{
+			var transform = MainImage.TransformToVisual(ImageLayer);
+			if (transform is not null)
+			{
+				var matrix = transform.Value;
+				double scaleX = matrix.M11;
+				double scaleY = matrix.M22;
+				double uniformScale = Math.Min(scaleX, scaleY);
+
+				LastMousePosition = (mousePosInWindow - canvasOffset)/ZoomBorder.ZoomY/uniformScale;
+				viewModel.OnCanvasPointerMoved(LastMousePosition);
+			}
+		}
+	}
+	private void WindowPointerPressed(object? sender, PointerPressedEventArgs e)
 	{
 		if (e.Properties.IsLeftButtonPressed)
 		{
-			var point = e.GetPosition((Border)sender!);
-			viewModel.OnCanvasPointerPressed(point - new Point(200, 200));
+			viewModel.OnCanvasPointerPressed(LastMousePosition);
 		}
-	}
-
-	private void BoundingBoxesCanvas_PointerMoved(object? sender, PointerEventArgs e)
-	{
-		var point = e.GetPosition((Border)sender!);
-		LastMousePosition = point - new Point(200, 200);
-		; // Store last mouse position
-		viewModel.OnCanvasPointerMoved(point - new Point(200, 200));
 	}
 
 	private void ZoomExtentsCanva(object? sender, RoutedEventArgs e)
 	{
 		ZoomBorder.ResetMatrix();
-		double ratio = Math.Min(Math.Max(ImageLayer.Bounds.Width, MainImage.Bounds.Width+400) /MainImage.Bounds.Width, Math.Max(ImageLayer.Bounds.Height, MainImage.Bounds.Height+400)/ MainImage.Bounds.Height);
-		ZoomBorder.ZoomTo(ratio, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
-	}
-	private void ZoomExtentsCanva()
-	{
-		ZoomBorder.ResetMatrix();
-		double ratio = Math.Min(Math.Max(ImageLayer.Bounds.Width, MainImage.Bounds.Width+400) /MainImage.Bounds.Width, Math.Max(ImageLayer.Bounds.Height, MainImage.Bounds.Height+400)/ MainImage.Bounds.Height);
-		ZoomBorder.ZoomTo(ratio, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
+		ZoomBorder.ZoomTo(1, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
 	}
 
 	private void OnAnnotationChecked(object? sender, RoutedEventArgs e)

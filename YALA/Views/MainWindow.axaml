@@ -17,6 +17,8 @@
 		RequestedThemeVariant="Dark"
 		KeyDown="OnKeyDown"
 		KeyUp="OnKeyUp"
+		PointerMoved="WindowPointerMoved"
+		PointerPressed="WindowPointerPressed"
         Background="{DynamicResource BackgroundBrush}">
 
 	<Window.Resources>
@@ -71,16 +73,14 @@
 			<Grid Grid.Column="0">
 				<ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
 					<paz:ZoomBorder Name="ZoomBorder" Stretch="None" ZoomSpeed="1.2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-						<Grid x:Name="ImageLayer" SizeChanged="ZoomExtentsCanva">
+						<Grid x:Name="ImageLayer">
 							<Viewbox Stretch="Uniform" UseLayoutRounding="False">
 								<Grid>
-									<Border Background="#01FFFFFF"
-										PointerPressed="BoundingBoxesCanvas_PointerPressed"
-										PointerMoved="BoundingBoxesCanvas_PointerMoved"
+									<Border Background="Transparent"
 										HorizontalAlignment="Center"
 										VerticalAlignment="Center">
 										<!--Add a margin to still trigger Pointer moved events event outside canvas-->
-										<Grid Margin="200">
+										<Grid>
 											<Image x:Name="MainImage"
 												   Source="{Binding CurrentImageBitmap}" />
 											<Canvas x:Name="BoundingBoxesCanvas"
