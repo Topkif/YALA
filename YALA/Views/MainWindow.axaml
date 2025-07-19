@@ -54,7 +54,7 @@
 				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
 					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
-					<ToggleButton Classes="icon-button" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen"/>
+					<ToggleButton Classes="icon-button" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen" IsChecked="{Binding DrawingBoundingBoxEnabled}"/>
 					<ToggleButton Classes="icon-button" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
 					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
 					<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>

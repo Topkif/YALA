@@ -30,6 +30,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	[ObservableProperty] string currentImageAbsolutePath = "";
 	[ObservableProperty] Bitmap currentImageBitmap;
 	[ObservableProperty] bool resizingBoundingBoxEnabled;
+	[ObservableProperty] bool drawingBoundingBoxEnabled = true;
 
 	// Variables for bounding box resizing
 	BoundingBox resizingBoundingBox = new();
@@ -288,7 +289,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public void OnPointerPressed(Point position)
 	{
-		if (!isDrawingNewBoundingBox)
+		if (!isDrawingNewBoundingBox && DrawingBoundingBoxEnabled)
 		{
 			// Check if pointer is inside the CurrentImageBitmap within threshold
 			double threshold = 20.0; // Threshold to start drawing a BoundingBox in Pixels
