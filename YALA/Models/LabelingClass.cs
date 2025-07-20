@@ -8,6 +8,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace YALA.Models;
 public partial class LabelingClass : ObservableObject
 {
+	public void SetColorSilently(string newColor)
+	{
+		color = newColor; // no PropertyChanged fired
+	}
+
 	[ObservableProperty] int id;
 	[ObservableProperty] string name = string.Empty;
 	[ObservableProperty] int numberOfInstances;

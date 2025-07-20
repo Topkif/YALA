@@ -35,7 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	// Variables for bounding box resizing
 	BoundingBox resizingBoundingBox = new();
-	LabelingClass? selectedLabel = null;
+	public LabelingClass? selectedClass = null;
 	ResizeDirection resizeDirection;
 	double resizeLength;
 
@@ -78,7 +78,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
 		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 0, IsSelected = true });
 		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 0, IsSelected = false });
-		selectedLabel = LabelingClasses.FirstOrDefault(x => x.IsSelected);
+		selectedClass = LabelingClasses.FirstOrDefault(x => x.IsSelected);
 		CurrentImageBoundingBoxes = new();
 	}
 
@@ -94,7 +94,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			if (classesPath.EndsWith(".yalac"))
 			{
 				List<(string, string)> classes = ClassesFileParser.ParseYalaClassNamesAndColor(classesPath);
-				databaseService.AddClasses(classes);
+				databaseService.AddClassesAndColor(classes);
 			}
 			else
 			{
@@ -105,6 +105,22 @@ public partial class MainWindowViewModel : ViewModelBase
 		LabelingClasses = databaseService.GetLabellingClasses();
 	}
 
+	public void CreateNewClass((string, string) tuple)
+	{
+		databaseService.AddClassesAndColor(new List<(string, string)> { tuple });
+		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
+		{
+			LabelingClasses = databaseService.GetLabellingClasses();
+		}
+		else // Simulation mode
+		{
+
+			LabelingClass newClass = new() { Name = tuple.Item1 };
+			newClass.SetColorSilently(tuple.Item2); // Set color without firing PropertyChanged
+			LabelingClasses.Add(newClass);
+			SetSelectedLabel(LabelingClasses.Last());
+		}
+	}
 	public void OpenExistingProject(string path)
 	{
 		if (databaseService.TablesExist(path))
@@ -116,12 +132,12 @@ public partial class MainWindowViewModel : ViewModelBase
 			databaseService.Initialize(path);
 		}
 		LabelingClasses = databaseService.GetLabellingClasses();
-		selectedLabel = LabelingClasses.FirstOrDefault(x => x.IsSelected == true);
+		selectedClass = LabelingClasses.FirstOrDefault(x => x.IsSelected == true);
 		ImagesPaths = databaseService.GetImagesPaths();
-		CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
-		CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
 		{
+			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
 		}
 	}
@@ -132,10 +148,27 @@ public partial class MainWindowViewModel : ViewModelBase
 		databaseService.Close();
 	}
 
-	public void UpdateLabelColor(LabelingClass labelingClass)
+	public void UpdateClassColor(LabelingClass labelingClass)
 	{
 		databaseService.SetClassColor(labelingClass.Name, labelingClass.Color);
-		CurrentImageBoundingBoxes.Where(x => x.ClassId == labelingClass.Id).ToList().ForEach(x => x.Color = labelingClass.Color);
+		CurrentImageBoundingBoxes.Where(x => x.ClassName == labelingClass.Name).ToList().ForEach(x => x.Color = labelingClass.Color);
+	}
+
+	public void DeleteSelectedClassFromProject()
+	{
+		if (selectedClass == null)
+			return;
+		databaseService.DeleteClass(selectedClass);
+		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
+		{
+			LabelingClasses = databaseService.GetLabellingClasses();
+		}
+		else // Simulation mode
+		{
+			LabelingClasses.Remove(selectedClass);
+		}
+		LabelingClasses.First().IsSelected = true; // Select the first class by default
+		selectedClass = LabelingClasses.FirstOrDefault(x => x.IsSelected == true);
 	}
 
 	public void SetSelectedLabel(LabelingClass labelingClass)
@@ -145,7 +178,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			label.IsSelected = false;
 		}
 		labelingClass.IsSelected = true;
-		selectedLabel = labelingClass;
+		selectedClass = labelingClass;
 	}
 	public void SetSelectedAnnotation(BoundingBox boundingBox, bool value)
 	{
@@ -308,18 +341,18 @@ public partial class MainWindowViewModel : ViewModelBase
 				return;
 
 
-			if (selectedLabel != null)
+			if (selectedClass != null)
 			{
 				startPoint = position;
 				newBoundingBox = new BoundingBox
 				{
-					ClassId = selectedLabel.Id,
+					ClassId = selectedClass.Id,
 					Tlx = position.X, // Take into account the stroke thickness?
 					Tly = position.Y, // Take into account the stroke thickness?
 					Width = 1,
 					Height = 1,
-					Color = selectedLabel.Color,
-					ClassName = selectedLabel.Name,
+					Color = selectedClass.Color,
+					ClassName = selectedClass.Name,
 					EditingEnabled = false, // Otherwise it tries to resize itself when creating
 				};
 				CurrentImageBoundingBoxes.Add(newBoundingBox);

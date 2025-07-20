@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using DialogHostAvalonia;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -28,11 +29,11 @@ public partial class MainWindow : Window
 		set
 		{
 			lastMousePosition = value;
-			MousePositionLabel.Content = $"({Math.Clamp(Math.Floor(value.X),1,viewModel.CurrentImageBitmap.Size.Width)}," +
-				$" {Math.Clamp(Math.Floor(value.Y),1,viewModel.CurrentImageBitmap.Size.Height)})";
+			MousePositionLabel.Content = $"({Math.Clamp(Math.Floor(value.X), 1, viewModel.CurrentImageBitmap.Size.Width)}," +
+				$" {Math.Clamp(Math.Floor(value.Y), 1, viewModel.CurrentImageBitmap.Size.Height)})";
 		}
 	}
-	
+
 	const double boundingBoxStrokeSize = 3.0;
 	const double boundingBoxThumbSize = 20.0;
 	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX/(1000/viewModel.CurrentImageBitmap.Size.Width);
@@ -113,7 +114,7 @@ public partial class MainWindow : Window
 				AllowMultiple = false,
 				FileTypeFilter = new[]
 			{
-				new FilePickerFileType("Class Files") { Patterns = new[] { "*.yalac", "*.txt", "*.names", "*" } }
+				new FilePickerFileType("Class Files") { Patterns = new[] { "*.yalac", "*.txt", "*.names" } }
 			}
 			});
 
@@ -173,6 +174,29 @@ public partial class MainWindow : Window
 		}
 	}
 
+	private async void OnDeleteSelectedClassClicked(object sender, RoutedEventArgs e)
+	{
+		var className = viewModel.selectedClass?.Name ?? "this class";
+		var dialog = new ConfirmDeleteDialog(className);
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is bool confirmed && confirmed)
+		{
+			viewModel.DeleteSelectedClassFromProject();
+		}
+	}
+
+	private async void OnAddClassClicked(object sender, RoutedEventArgs e)
+	{
+		var dialog = new NewClassDialog();
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is ValueTuple<string, string> tuple)
+		{
+			var (className, hexColor) = tuple;
+			viewModel.CreateNewClass(tuple);
+		}
+	}
 	private void OnColorChanged(object sender, ColorChangedEventArgs e)
 	{
 		if (sender is ColorPicker picker && picker.DataContext is LabelingClass selectedClass)
@@ -182,7 +206,7 @@ public partial class MainWindow : Window
 
 			if (DataContext is not MainWindowViewModel viewModel)
 				return;
-			viewModel.UpdateLabelColor(selectedClass);
+			viewModel.UpdateClassColor(selectedClass);
 		}
 	}
 
@@ -260,7 +284,6 @@ public partial class MainWindow : Window
 			}
 		}
 	}
-
 	private void OnDeleteBoundingBoxClicked(object? sender, RoutedEventArgs e)
 	{
 		if (sender is Button button && button.Tag is BoundingBox bbox)

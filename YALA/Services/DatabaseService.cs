@@ -84,7 +84,8 @@ public class DatabaseService
 		}
 		transaction?.Commit();
 	}
-	public void AddClasses(List<(string, string)> classes)
+
+	public void AddClassesAndColor(List<(string, string)> classes)
 	{
 		var sql = "INSERT INTO Classes (Name, Color) VALUES (@Name, @Color);";
 
@@ -93,6 +94,19 @@ public class DatabaseService
 		{
 			connection?.Execute(sql, new { Name = className.Item1, Color = className.Item2 }, transaction);
 		}
+		transaction?.Commit();
+	}
+	public void DeleteClass(LabelingClass labelingClass)
+	{
+		const string deleteAnnotations = @"
+		DELETE FROM Annotations
+		WHERE ClassId = (SELECT Id FROM Classes WHERE Name = @Name);";
+
+		const string deleteImage = "DELETE FROM Classes WHERE Name = @Name;";
+
+		using var transaction = connection?.BeginTransaction();
+		connection?.Execute(deleteAnnotations, new { Name = labelingClass.Name }, transaction);
+		connection?.Execute(deleteImage, new { Name = labelingClass.Name }, transaction);
 		transaction?.Commit();
 	}
 

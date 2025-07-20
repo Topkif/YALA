@@ -26,6 +26,7 @@
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="DialogHost.Avalonia" Version="0.9.3" />
     <PackageReference Include="Lucide.Avalonia" Version="0.1.36" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0-preview.5.25277.114" />
     <PackageReference Include="PanAndZoom" Version="11.3.0.1" />

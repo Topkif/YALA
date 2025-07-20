@@ -8,11 +8,13 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/logo-YALA.ico"
 		xmlns:conv="using:YALA.Converters"
+		xmlns:local="clr-namespace:YALA.Views"
         xmlns:lucide="clr-namespace:Lucide.Avalonia;assembly=Lucide.Avalonia"
 		xmlns:views="clr-namespace:YALA.Views;assembly=YALA"
 		xmlns:cp="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ColorPicker"
 		xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
 		xmlns:paz="using:Avalonia.Controls.PanAndZoom"
+		xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
         Title="YALA"
 		RequestedThemeVariant="Dark"
 		KeyDown="OnKeyDown"
@@ -29,192 +31,198 @@
 		<conv:DoubleToIntConverter x:Key="DoubleToIntConverter"/>
 	</Window.Resources>
 
-	<Grid RowDefinitions="Auto,*, Auto" x:Name="MainFocusTarget" Focusable="True">
-		<!-- Top Menu Bar And Controls-->
-		<Border Background="{DynamicResource MenuBackGroundBrush}" Padding="0,0,0,10">
-			<Grid ColumnDefinitions="*,Auto,*" >
-				<Menu>
-					<MenuItem Header="Project">
-						<MenuItem Header="Create new" Click="OnCreateNewProjectClick"/>
-						<MenuItem Header="Open existing" Click="OnOpenExistingProjectClick" />
-						<MenuItem Header="Close current" Command="{Binding CloseCurrentProjectCommand}"/>
-						<Separator/>
-						<MenuItem Header="Add images" Click="OnAddImagesClicked" />
-						<Separator/>
-						<MenuItem Header="Export classes" Click="OnExportClassesClicked" />
-					</MenuItem>
-					<MenuItem Header="Inference">
-						<MenuItem Header="Open YOLO .pt"/>
-						<MenuItem Header="Run on all project"/>
-					</MenuItem>
-					<MenuItem Header="Edit">
-						<MenuItem Header="Copy"/>
-						<MenuItem Header="Paste" />
-					</MenuItem>
-				</Menu>
+	<dialogHost:DialogHost Identifier="RootDialog" CloseOnClickAway="True">
+		<Grid RowDefinitions="Auto,*, Auto" x:Name="MainFocusTarget" Focusable="True">
+			<!-- Top Menu Bar And Controls-->
+			<Border Background="{DynamicResource MenuBackGroundBrush}" Padding="0,0,0,10">
+				<Grid ColumnDefinitions="*,Auto,*" >
+					<Menu>
+						<MenuItem Header="Project">
+							<MenuItem Header="Create new" Click="OnCreateNewProjectClick"/>
+							<MenuItem Header="Open existing" Click="OnOpenExistingProjectClick" />
+							<MenuItem Header="Close current" Command="{Binding CloseCurrentProjectCommand}"/>
+							<Separator/>
+							<MenuItem Header="Add images" Click="OnAddImagesClicked" />
+							<Separator/>
+							<MenuItem Header="Export classes" Click="OnExportClassesClicked" />
+						</MenuItem>
+						<MenuItem Header="Inference">
+							<MenuItem Header="Open YOLO .pt"/>
+							<MenuItem Header="Run on all project"/>
+						</MenuItem>
+						<MenuItem Header="Edit">
+							<MenuItem Header="Copy"/>
+							<MenuItem Header="Paste" />
+						</MenuItem>
+					</Menu>
 
-				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
-					<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
-					<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
-					<ToggleButton Classes="icon-button" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen" IsChecked="{Binding DrawingBoundingBoxEnabled}"/>
-					<ToggleButton Classes="icon-button" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
-					<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
-					<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>
-					<Button Classes="icon-button" ToolTip.Tip="Remove Current Image From Project" Content="Trash2" Command="{Binding RemoveCurrentImageFromProjectCommand}" Tag="{Binding}" />
-				</StackPanel>
-			</Grid>
-		</Border>
+					<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+						<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
+						<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
+						<ToggleButton Classes="icon-button" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen" IsChecked="{Binding DrawingBoundingBoxEnabled}"/>
+						<ToggleButton Classes="icon-button" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
+						<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
+						<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>
+						<Button Classes="icon-button" ToolTip.Tip="Remove Current Image From Project" Content="Trash2" Command="{Binding RemoveCurrentImageFromProjectCommand}" Tag="{Binding}" />
+					</StackPanel>
+				</Grid>
+			</Border>
 
-		<!-- Main Content -->
-		<Grid Grid.Row="1">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="Auto" MaxWidth="400" />
-			</Grid.ColumnDefinitions>
+			<!-- Main Content -->
+			<Grid Grid.Row="1">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="Auto" MaxWidth="400" />
+				</Grid.ColumnDefinitions>
 
-			<!-- Image Display Area -->
-			<Grid Grid.Column="0">
-				<ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
-					<paz:ZoomBorder Name="ZoomBorder" ZoomChanged="OnZoomChanged" Stretch="None" ZoomSpeed="1.2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-						<Grid x:Name="ImageLayer">
-							<Viewbox Stretch="Uniform" UseLayoutRounding="False">
-								<Grid>
-									<Image x:Name="MainImage"
-										   Source="{Binding CurrentImageBitmap}" />
-									<Canvas x:Name="BoundingBoxesCanvas"
-											Width="{Binding CurrentImageBitmap.PixelSize.Width}"
-											Height="{Binding CurrentImageBitmap.PixelSize.Height}" />
-								</Grid>
-							</Viewbox>
-						</Grid>
-					</paz:ZoomBorder>
-				</ScrollViewer>
-			</Grid>
-
-			<!-- Side Panel -->
-			<ScrollViewer Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}">
-				<StackPanel Spacing="10" Margin="5">
-					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
-						<StackPanel Spacing="5">
-							<TextBlock Text="Image Information" FontWeight="Bold" FontSize="14"/>
-							<TextBlock>
-								<Run Text="Size: "/>
-								<Run Text="{Binding CurrentImageBitmap.Size.Width}"/>
-								<Run Text=" x "/>
-								<Run Text="{Binding CurrentImageBitmap.Size.Height}"/>
-							</TextBlock>
-							<StackPanel Orientation="Horizontal" Spacing="4">
-								<TextBlock VerticalAlignment="Center" Text="Current: "/>
-								<TextBox x:Name="ImageIndexTextBox" Width="40"
-										 Text="{Binding CurrentImageIndex}"
-										 HorizontalAlignment="Left"
-										 VerticalContentAlignment="Center"
-										 TextChanged="OnCurrentImageIndexChanged"/>
-								<TextBlock VerticalAlignment="Center" Text="/"/>
-								<TextBlock VerticalAlignment="Center" Text="{Binding ImagesPaths.Count}"/>
-							</StackPanel>
-						</StackPanel>
-					</Border>
-
-					<!--Classes-->
-					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
-						<StackPanel Spacing="8">
-							<TextBlock Text="Classes" FontWeight="Bold" FontSize="14"/>
-							<ItemsControl ItemsSource="{Binding LabelingClasses}">
-								<ItemsControl.ItemsPanel>
-									<ItemsPanelTemplate>
-										<StackPanel Spacing="8"/>
-									</ItemsPanelTemplate>
-								</ItemsControl.ItemsPanel>
-								<ItemsControl.ItemTemplate>
-									<DataTemplate>
-										<Border Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5">
-											<ToggleButton Classes="class-button"
-												IsChecked="{Binding IsSelected}"
-														  Click="OnClassChecked"
-														  BorderThickness="0"
-														  Padding="8"
-														  HorizontalAlignment="Stretch">
-												<Grid ColumnDefinitions="Auto,Auto,*"
-													  HorizontalAlignment="Stretch">
-													<TextBlock Grid.Column="0" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
-													<TextBlock Grid.Column="1" Text="{Binding NumberOfInstances, StringFormat='({0} Instances)'}" VerticalAlignment="Center" />
-													<cp:ColorPicker Grid.Column="2"
-																	Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
-																	HorizontalAlignment="Right"
-																	Margin="0,0,5,0"
-																	IsAlphaEnabled="False"
-																	IsAlphaVisible="False"
-																	VerticalAlignment="Center"
-																	ColorChanged="OnColorChanged"/>
-												</Grid>
-											</ToggleButton>
-										</Border>
-									</DataTemplate>
-								</ItemsControl.ItemTemplate>
-							</ItemsControl>
-						</StackPanel>
-					</Border>
-
-					<!-- Annotations -->
-					<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
-						<StackPanel Spacing="8">
-							<Grid ColumnDefinitions="Auto,*">
-								<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"  VerticalAlignment="Center"/>
-								<Button Grid.Column="1" Classes="icon-button" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip.Tip="Delete Current Image Annotations" Content="Trash2" Command="{Binding DeleteAllImageBoundingBoxCommand}" Tag="{Binding}" />
+				<!-- Image Display Area -->
+				<Grid Grid.Column="0">
+					<ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+						<paz:ZoomBorder Name="ZoomBorder" ZoomChanged="OnZoomChanged" Stretch="None" ZoomSpeed="1.2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+							<Grid x:Name="ImageLayer">
+								<Viewbox Stretch="Uniform" UseLayoutRounding="False">
+									<Grid>
+										<Image x:Name="MainImage"
+											   Source="{Binding CurrentImageBitmap}" />
+										<Canvas x:Name="BoundingBoxesCanvas"
+												Background="Transparent"
+												Cursor="Cross"
+												Width="{Binding CurrentImageBitmap.PixelSize.Width}"
+												Height="{Binding CurrentImageBitmap.PixelSize.Height}"/>										
+									</Grid>
+								</Viewbox>
 							</Grid>
-							<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
-								<ItemsControl.ItemTemplate>
-									<DataTemplate>
-										<ToggleButton Classes="class-button" IsChecked="{Binding IsSelected}"
-													  Checked="OnAnnotationChecked" Unchecked="OnAnnotationUnchecked"
-													  Padding="8" CornerRadius="5" Margin="0,0,0,4"
-												HorizontalAlignment="Stretch">
-											<Grid ColumnDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch">
-												<Rectangle Width="16" Height="16"
-														   Fill="{Binding Color, Converter={StaticResource HexToBrushConverter}}"
-														   Margin="0,0,8,0"/>
-												<StackPanel Grid.Column="1">
-													<TextBlock Text="{Binding ClassName}"/>
-													<TextBlock FontWeight="Medium" FontSize="12" Text="{Binding Tlx, StringFormat=({0}, }">
-														<TextBlock.Text>
-															<MultiBinding StringFormat="({0}, {1}) {2}×{3}">
-																<Binding Path="Tlx" Converter="{StaticResource DoubleToIntConverter}"/>
-																<Binding Path="Tly" Converter="{StaticResource DoubleToIntConverter}"/>
-																<Binding Path="Width" Converter="{StaticResource DoubleToIntConverter}"/>
-																<Binding Path="Height" Converter="{StaticResource DoubleToIntConverter}"/>
-															</MultiBinding>
-														</TextBlock.Text>
-													</TextBlock>
-												</StackPanel>
-												<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
-													<Button Classes="icon-button"
-															ToolTip.Tip="Delete"
+						</paz:ZoomBorder>
+					</ScrollViewer>
+				</Grid>
+
+				<!-- Side Panel -->
+				<ScrollViewer Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}">
+					<StackPanel Spacing="10" Margin="5">
+						<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
+							<StackPanel Spacing="5">
+								<TextBlock Text="Image Information" FontWeight="Bold" FontSize="14"/>
+								<TextBlock>
+									<Run Text="Size: "/>
+									<Run Text="{Binding CurrentImageBitmap.Size.Width}"/>
+									<Run Text=" x "/>
+									<Run Text="{Binding CurrentImageBitmap.Size.Height}"/>
+								</TextBlock>
+								<StackPanel Orientation="Horizontal" Spacing="4">
+									<TextBlock VerticalAlignment="Center" Text="Current: "/>
+									<TextBox x:Name="ImageIndexTextBox" Width="40"
+											 Text="{Binding CurrentImageIndex}"
+											 HorizontalAlignment="Left"
+											 VerticalContentAlignment="Center"
+											 TextChanged="OnCurrentImageIndexChanged"/>
+									<TextBlock VerticalAlignment="Center" Text="/"/>
+									<TextBlock VerticalAlignment="Center" Text="{Binding ImagesPaths.Count}"/>
+								</StackPanel>
+							</StackPanel>
+						</Border>
+
+						<!--Classes-->
+						<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
+							<StackPanel Spacing="8">
+								<Grid ColumnDefinitions="Auto, *">
+									<TextBlock Text="Classes" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+									<StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+										<Button  Classes="icon-button" ToolTip.Tip="Add New Class" Content="Plus" Click="OnAddClassClicked" Tag="{Binding}" />
+										<Button Classes="icon-button" ToolTip.Tip="Remove Selected Class" Content="Trash2" Click="OnDeleteSelectedClassClicked" Tag="{Binding}" />
+									</StackPanel>
+								</Grid>
+								<ItemsControl ItemsSource="{Binding LabelingClasses}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<StackPanel Spacing="8"/>
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate>
+											<Border Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5">
+												<ToggleButton Classes="class-button"
+													IsChecked="{Binding IsSelected}"
+															  Click="OnClassChecked"
+															  BorderThickness="0"
+															  Padding="8"
+															  HorizontalAlignment="Stretch">
+													<Grid ColumnDefinitions="Auto,Auto, *" HorizontalAlignment="Stretch">
+														<TextBlock Grid.Column="0" Text="{Binding Name}" Margin="4,0" VerticalAlignment="Center"/>
+														<TextBlock Grid.Column="1" Text="{Binding NumberOfInstances, StringFormat='({0} Instances)'}" VerticalAlignment="Center" />
+														<cp:ColorPicker Grid.Column="2"
+																		Color="{Binding Color, Converter={StaticResource HexToColorConverter}}"
+																		HorizontalAlignment="Right"
+																		Margin="0,0,5,0"
+																		IsAlphaEnabled="False"
+																		IsAlphaVisible="False"
+																		VerticalAlignment="Center"
+																		ColorChanged="OnColorChanged"/>
+													</Grid>
+												</ToggleButton>
+											</Border>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</StackPanel>
+						</Border>
+
+						<!-- Annotations -->
+						<Border Background="{DynamicResource BackgroundBrush}" Padding="8" CornerRadius="5">
+							<StackPanel Spacing="8">
+								<Grid ColumnDefinitions="Auto,*">
+									<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"  VerticalAlignment="Center"/>
+									<Button Grid.Column="1" Classes="icon-button" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip.Tip="Delete All Image Annotations" Content="Trash2" Command="{Binding DeleteAllImageBoundingBoxCommand}" Tag="{Binding}" />
+								</Grid>
+								<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
+									<ItemsControl.ItemTemplate>
+										<DataTemplate>
+											<ToggleButton Classes="class-button" IsChecked="{Binding IsSelected}"
+														  Checked="OnAnnotationChecked" Unchecked="OnAnnotationUnchecked"
+														  Padding="8" CornerRadius="5" Margin="0,0,0,4"
+													HorizontalAlignment="Stretch">
+												<Grid ColumnDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch">
+													<Rectangle Width="16" Height="16"
+															   Fill="{Binding Color, Converter={StaticResource HexToBrushConverter}}"
+															   Margin="0,0,8,0"/>
+													<StackPanel Grid.Column="1">
+														<TextBlock Text="{Binding ClassName}"/>
+														<TextBlock FontWeight="Medium" FontSize="12" Text="{Binding Tlx, StringFormat=({0}, }">
+															<TextBlock.Text>
+																<MultiBinding StringFormat="({0}, {1}) {2}×{3}">
+																	<Binding Path="Tlx" Converter="{StaticResource DoubleToIntConverter}"/>
+																	<Binding Path="Tly" Converter="{StaticResource DoubleToIntConverter}"/>
+																	<Binding Path="Width" Converter="{StaticResource DoubleToIntConverter}"/>
+																	<Binding Path="Height" Converter="{StaticResource DoubleToIntConverter}"/>
+																</MultiBinding>
+															</TextBlock.Text>
+														</TextBlock>
+													</StackPanel>
+													<Button Grid.Column="2" Classes="icon-button"
+															ToolTip.Tip="Delete Annotation"
 															Content="Trash2"
 															Click="OnDeleteBoundingBoxClicked"
 															Tag="{Binding}" />
-												</StackPanel>
-											</Grid>
-										</ToggleButton>
-									</DataTemplate>
-								</ItemsControl.ItemTemplate>
-							</ItemsControl>
-						</StackPanel>
-					</Border>
-				</StackPanel>
-			</ScrollViewer>
+												</Grid>
+											</ToggleButton>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</StackPanel>
+						</Border>
+					</StackPanel>
+				</ScrollViewer>
+			</Grid>
+			<Grid Grid.Row="2" Margin="2">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition MinWidth="75" Width="Auto"/>
+					<ColumnDefinition Width="*"/>
+				</Grid.ColumnDefinitions>
+				<Label x:Name="MousePositionLabel" FontSize="12"
+					   VerticalAlignment="Center"/>
+				<TextBlock Text="{Binding CurrentImageAbsolutePath, StringFormat='Image path: {0}'}"
+						   VerticalAlignment="Center"
+						   Grid.Column="1"/>
+			</Grid>
 		</Grid>
-		<Grid Grid.Row="2" Margin="2">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition MinWidth="75" Width="Auto"/>
-				<ColumnDefinition Width="*"/>
-			</Grid.ColumnDefinitions>
-			<Label x:Name="MousePositionLabel" FontSize="12"
-				   VerticalAlignment="Center"/>
-			<TextBlock Text="{Binding CurrentImageAbsolutePath, StringFormat='Image path: {0}'}"
-					   VerticalAlignment="Center"
-					   Grid.Column="1"/>
-		</Grid>
-
-	</Grid>
+	</dialogHost:DialogHost>
 </Window>
