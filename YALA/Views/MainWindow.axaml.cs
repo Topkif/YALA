@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using DialogHostAvalonia;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ using System.Linq;
 using YALA.Converters;
 using YALA.Models;
 using YALA.ViewModels;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace YALA.Views;
 public partial class MainWindow : Window
@@ -174,10 +176,30 @@ public partial class MainWindow : Window
 		}
 	}
 
+	private async void OnExportProjectYoloClicked(object sender, RoutedEventArgs e)
+	{
+		var dialog = new ExportProjectDialog(viewModel.ImagesPaths.Count, viewModel.LabellingClasses.Select(c => c.Name));
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is ExportProjectDialog exportDialog)
+		{
+			viewModel.ExportProjectYolo(
+				exportDialog.ExportPath,
+				exportDialog.SelectedClasses,
+				exportDialog.TrainRatio,
+				exportDialog.ValRatio,
+				exportDialog.TestRatio
+			);
+		}
+	}
+
+
+
 	private async void OnDeleteSelectedClassClicked(object sender, RoutedEventArgs e)
 	{
 		var className = viewModel.selectedClass?.Name ?? "this class";
-		var dialog = new ConfirmDeleteDialog(className);
+		string message = $"Are you sure you want to delete the class \"{className}\" and all associated annotations?";
+		var dialog = new ConfirmDialog(message);
 		var result = await DialogHost.Show(dialog, "RootDialog");
 
 		if (result is bool confirmed && confirmed)
@@ -199,7 +221,7 @@ public partial class MainWindow : Window
 	}
 	private void OnColorChanged(object sender, ColorChangedEventArgs e)
 	{
-		if (sender is ColorPicker picker && picker.DataContext is LabelingClass selectedClass)
+		if (sender is ColorPicker picker && picker.DataContext is LabellingClass selectedClass)
 		{
 			var hexColor = e.NewColor.ToString(); // format: "#RRGGBBAA"
 			selectedClass.Color = hexColor;
@@ -212,7 +234,7 @@ public partial class MainWindow : Window
 
 	private void OnClassChecked(object sender, RoutedEventArgs e)
 	{
-		if (sender is ToggleButton but && but.DataContext is LabelingClass selectedClass)
+		if (sender is ToggleButton but && but.DataContext is LabellingClass selectedClass)
 		{
 			viewModel.SetSelectedLabel(selectedClass);
 		}
@@ -294,7 +316,7 @@ public partial class MainWindow : Window
 
 	private void WindowPointerMoved(object? sender, PointerEventArgs e)
 	{
-		var window = (Window)sender!;
+		var window = (Grid)sender!;
 		Point mousePosInWindow = e.GetPosition(window);
 
 		Point? canvasTopLeftInWindow = BoundingBoxesCanvas.TranslatePoint(new Point(0, 0), window);
@@ -315,9 +337,43 @@ public partial class MainWindow : Window
 	}
 	private void WindowPointerPressed(object? sender, PointerPressedEventArgs e)
 	{
+		if (IsPointerInMenu(e))
+			return;
 		if (e.Properties.IsLeftButtonPressed)
 		{
 			viewModel.OnPointerPressed(LastMousePosition);
+		}
+		else if (e.Properties.IsRightButtonPressed)
+		{
+			viewModel.CancelBoundingBoxDrawing();
+		}
+
+	}
+	private bool IsPointerInMenu(PointerPressedEventArgs e)
+	{
+		// Walk up the visual tree from the source
+		Visual? current = e.Source as Visual;
+
+		while (current != null)
+		{
+			if (current is Menu || current is MenuItem)
+				return true;
+
+			current = current.GetVisualParent();
+		}
+
+		return false;
+	}
+
+	private async void RemoveCurrentImageFromProjectClicked(object? sender, RoutedEventArgs e)
+	{
+		string message = $"Are you sure you want to delete this image and all associated annotations?";
+		var dialog = new ConfirmDialog(message);
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is bool confirmed && confirmed)
+		{
+			viewModel.RemoveCurrentImageFromProject();
 		}
 	}
 

@@ -5,12 +5,12 @@ using Avalonia.Markup.Xaml;
 using DialogHostAvalonia;
 
 namespace YALA.Views;
-public partial class ConfirmDeleteDialog : UserControl
+public partial class ConfirmDialog : UserControl
 {
-	public ConfirmDeleteDialog(string className)
+	public ConfirmDialog(string message)
 	{
 		InitializeComponent();
-		MessageText.Text = $"Are you sure you want to delete the class \"{className}\" and all associated annotations?";
+		MessageText.Text = message;
 	}
 
 	private void OnConfirmClick(object? sender, RoutedEventArgs e)

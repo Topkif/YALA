@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace YALA.Models;
-public class LabelingDatabase
+public class LabellingDatabase
 {
 	public string databasePath = "";
 	public int numberOfImages;

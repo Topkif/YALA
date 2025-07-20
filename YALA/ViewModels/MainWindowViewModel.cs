@@ -25,7 +25,7 @@ using YALA.Services;
 namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
-	[ObservableProperty] ObservableCollection<LabelingClass> labelingClasses = new();
+	[ObservableProperty] ObservableCollection<LabellingClass> labellingClasses = new();
 	[ObservableProperty] ObservableCollection<string> imagesPaths = new();
 	[ObservableProperty] int currentImageIndex = 1;
 	[ObservableProperty] string currentImageAbsolutePath = "";
@@ -35,7 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	// Variables for bounding box resizing
 	BoundingBox resizingBoundingBox = new();
-	public LabelingClass? selectedClass = null;
+	public LabellingClass? selectedClass = null;
 	ResizeDirection resizeDirection;
 	double resizeLength;
 
@@ -76,9 +76,9 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		// Load some default values to test
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
-		LabelingClasses.Add(new LabelingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 0, IsSelected = true });
-		LabelingClasses.Add(new LabelingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 0, IsSelected = false });
-		selectedClass = LabelingClasses.FirstOrDefault(x => x.IsSelected);
+		LabellingClasses.Add(new LabellingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 0, IsSelected = true });
+		LabellingClasses.Add(new LabellingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 0, IsSelected = false });
+		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected);
 		CurrentImageBoundingBoxes = new();
 	}
 
@@ -102,7 +102,7 @@ public partial class MainWindowViewModel : ViewModelBase
 				databaseService.AddClasses(classes);
 			}
 		}
-		LabelingClasses = databaseService.GetLabellingClasses();
+		LabellingClasses = databaseService.GetLabellingClasses();
 	}
 
 	public void CreateNewClass((string, string) tuple)
@@ -110,15 +110,15 @@ public partial class MainWindowViewModel : ViewModelBase
 		databaseService.AddClassesAndColor(new List<(string, string)> { tuple });
 		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
 		{
-			LabelingClasses = databaseService.GetLabellingClasses();
+			LabellingClasses = databaseService.GetLabellingClasses();
 		}
 		else // Simulation mode
 		{
 
-			LabelingClass newClass = new() { Name = tuple.Item1 };
+			LabellingClass newClass = new() { Name = tuple.Item1 };
 			newClass.SetColorSilently(tuple.Item2); // Set color without firing PropertyChanged
-			LabelingClasses.Add(newClass);
-			SetSelectedLabel(LabelingClasses.Last());
+			LabellingClasses.Add(newClass);
+			SetSelectedLabel(LabellingClasses.Last());
 		}
 	}
 	public void OpenExistingProject(string path)
@@ -131,8 +131,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			databaseService.Initialize(path);
 		}
-		LabelingClasses = databaseService.GetLabellingClasses();
-		selectedClass = LabelingClasses.FirstOrDefault(x => x.IsSelected == true);
+		LabellingClasses = databaseService.GetLabellingClasses();
+		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected == true);
 		ImagesPaths = databaseService.GetImagesPaths();
 		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
 		{
@@ -148,7 +148,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		databaseService.Close();
 	}
 
-	public void UpdateClassColor(LabelingClass labelingClass)
+	public void UpdateClassColor(LabellingClass labelingClass)
 	{
 		databaseService.SetClassColor(labelingClass.Name, labelingClass.Color);
 		CurrentImageBoundingBoxes.Where(x => x.ClassName == labelingClass.Name).ToList().ForEach(x => x.Color = labelingClass.Color);
@@ -161,19 +161,19 @@ public partial class MainWindowViewModel : ViewModelBase
 		databaseService.DeleteClass(selectedClass);
 		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
 		{
-			LabelingClasses = databaseService.GetLabellingClasses();
+			LabellingClasses = databaseService.GetLabellingClasses();
 		}
 		else // Simulation mode
 		{
-			LabelingClasses.Remove(selectedClass);
+			LabellingClasses.Remove(selectedClass);
 		}
-		LabelingClasses.First().IsSelected = true; // Select the first class by default
-		selectedClass = LabelingClasses.FirstOrDefault(x => x.IsSelected == true);
+		LabellingClasses.First().IsSelected = true; // Select the first class by default
+		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected == true);
 	}
 
-	public void SetSelectedLabel(LabelingClass labelingClass)
+	public void SetSelectedLabel(LabellingClass labelingClass)
 	{
-		foreach (var label in LabelingClasses)
+		foreach (var label in LabellingClasses)
 		{
 			label.IsSelected = false;
 		}
@@ -227,8 +227,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		}
 	}
 
-	[RelayCommand]
-	private void RemoveCurrentImageFromProject()
+	public void RemoveCurrentImageFromProject()
 	{
 		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
 		{
@@ -334,12 +333,14 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (!isDrawingNewBoundingBox && DrawingBoundingBoxEnabled)
 		{
 			// Check if pointer is inside the CurrentImageBitmap within threshold
-			double threshold = 20.0; // Threshold to start drawing a BoundingBox in Pixels
+			double threshold = 2; // Threshold to start drawing a BoundingBox in Pixels
 			if (position.X < -threshold || position.Y < -threshold ||
 				position.X >= CurrentImageBitmap.Size.Width + threshold ||
 				position.Y >= CurrentImageBitmap.Size.Height + threshold)
 				return;
 
+			// Disable editing temporarily to be able to set a bounding close to another
+			CurrentImageBoundingBoxes.ToList().ForEach(x => x.EditingEnabled = false);
 
 			if (selectedClass != null)
 			{
@@ -364,7 +365,8 @@ public partial class MainWindowViewModel : ViewModelBase
 			isDrawingNewBoundingBox = false;
 			if (newBoundingBox != null)
 			{
-				newBoundingBox.EditingEnabled = ResizingBoundingBoxEnabled;
+				// Re enable editing if necessary
+				CurrentImageBoundingBoxes.ToList().ForEach(x => x.EditingEnabled = ResizingBoundingBoxEnabled);
 				if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
 				{
 					databaseService.AddBoundingBox(newBoundingBox, ImagesPaths[CurrentImageIndex - 1]);
@@ -438,4 +440,11 @@ public partial class MainWindowViewModel : ViewModelBase
 			}
 		}
 	}
+
+	public void ExportProjectYolo(string exportPath, List<string> selectedClasses, double trainRatio, double valRatio, double testRatio)
+	{
+		YoloExporter.ExportProject(exportPath, databaseService, ImagesPaths.ToList(), selectedClasses, trainRatio, valRatio, testRatio);
+
+	}
+
 }

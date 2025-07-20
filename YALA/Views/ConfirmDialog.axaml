@@ -3,13 +3,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="YALA.Views.ConfirmDeleteDialog">
+             x:Class="YALA.Views.ConfirmDialog">
 
 	<StackPanel Margin="20">
 		<TextBlock x:Name="MessageText" TextWrapping="Wrap" />
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-			<Button Content="Cancel" Margin="0,0,10,0" Click="OnCancelClick"/>
-			<Button Content="Delete" Click="OnConfirmClick" Background="Red" />
+			<Button Content="No" Margin="0,0,10,0" Click="OnCancelClick"/>
+			<Button Content="Yes" Click="OnConfirmClick" Background="Red" />
 		</StackPanel>
 	</StackPanel>
 </UserControl>

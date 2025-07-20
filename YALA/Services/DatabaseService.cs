@@ -96,7 +96,7 @@ public class DatabaseService
 		}
 		transaction?.Commit();
 	}
-	public void DeleteClass(LabelingClass labelingClass)
+	public void DeleteClass(LabellingClass labelingClass)
 	{
 		const string deleteAnnotations = @"
 		DELETE FROM Annotations
@@ -127,15 +127,15 @@ public class DatabaseService
 
 		return colorHex ?? string.Empty;
 	}
-	public ObservableCollection<LabelingClass> GetLabellingClasses()
+	public ObservableCollection<LabellingClass> GetLabellingClasses()
 	{
-		var labellingClasses = connection?.Query<LabelingClass>("SELECT Id, Name, Color FROM Classes").ToList();
+		var labellingClasses = connection?.Query<LabellingClass>("SELECT Id, Name, Color FROM Classes").ToList();
 		if (labellingClasses != null)
 		{
 			labellingClasses.First().IsSelected = true;
-			return new ObservableCollection<LabelingClass>(labellingClasses);
+			return new ObservableCollection<LabellingClass>(labellingClasses);
 		}
-		return new ObservableCollection<LabelingClass>();
+		return new ObservableCollection<LabellingClass>();
 	}
 
 	public void AddImages(List<string> imagesPaths)
@@ -179,7 +179,7 @@ public class DatabaseService
 		const string getImageIdSql = "SELECT Id FROM Images WHERE Path = @Path;";
 		const string insertAnnotationSql = @"
 		INSERT INTO Annotations (ImageId, ClassId, Tlx, Tly, Width, Height)
-		VALUES (@ImageId, @ClassId, @X, @Y, @Width, @Height);";
+		VALUES (@ImageId, @ClassId, @Tlx, @Tly, @Width, @Height);";
 
 		using var transaction = connection?.BeginTransaction();
 
@@ -205,7 +205,7 @@ public class DatabaseService
 		var sql = @"
 		DELETE FROM Annotations
 		WHERE ImageId = (SELECT Id FROM Images WHERE Path = @Path)
-		  AND ClassId = @ClassId AND X = @X AND Y = @Y AND Width = @Width AND Height = @Height;";
+		  AND ClassId = @ClassId AND Tlx = @Tlx AND Tly = @Tly AND Width = @Width AND Height = @Height;";
 		using var transaction = connection?.BeginTransaction();
 		connection?.Execute(sql, new
 		{
@@ -229,13 +229,13 @@ public class DatabaseService
 		transaction?.Commit();
 	}
 
-	public ObservableCollection<BoundingBox> GetBoundingBoxes(string imagePath, bool editingEnabled)
+	public ObservableCollection<BoundingBox> GetBoundingBoxes(string imagePath, bool editingEnabled = false)
 	{
 		var boundingBoxes = connection?.Query<BoundingBox>(@"
 		SELECT 
 		A.ClassId,
 		A.Tlx,
-		A.Tlx,
+		A.Tly,
 		A.Width,
 		A.Height,
 		(SELECT Name FROM Classes C WHERE C.Id = A.ClassId) AS ClassName,
@@ -252,6 +252,4 @@ public class DatabaseService
 		}
 		return new ObservableCollection<BoundingBox>();
 	}
-
-
 }
