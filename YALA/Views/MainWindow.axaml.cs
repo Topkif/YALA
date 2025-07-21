@@ -104,11 +104,11 @@ public partial class MainWindow : Window
 		var files = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
 		{
 			Title = "Create New Project Database",
-			DefaultExtension = "db",
-			SuggestedFileName = "project.db",
+			DefaultExtension = "yala",
+			SuggestedFileName = "project.yala",
 			FileTypeChoices = new[]
 			{
-			new FilePickerFileType("SQLite Database") { Patterns = new[] { "*.db" } }
+			new FilePickerFileType("SQLite Database") { Patterns = new[] { "*.yala" } }
 		}
 		});
 
@@ -142,11 +142,11 @@ public partial class MainWindow : Window
 
 		var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
 		{
-			Title = "Open Existing Project (.db)",
+			Title = "Open Existing Project (.yala)",
 			AllowMultiple = false,
 			FileTypeFilter = new[]
 			{
-			new FilePickerFileType("SQLite Database") { Patterns = new[] { "*.db" } }
+			new FilePickerFileType("SQLite Database") { Patterns = new[] { "*.yala" } }
 		}
 		});
 
@@ -197,7 +197,17 @@ public partial class MainWindow : Window
 		}
 	}
 
+	private async void DeleteAllImageBoundingBox(object sender, RoutedEventArgs e)
+	{
+		string message = $"Are you sure you want to delete all annotations for the current image?";
+		var dialog = new ConfirmDialog(message);
+		var result = await DialogHost.Show(dialog, "RootDialog");
 
+		if (result is bool confirmed && confirmed)
+		{
+			viewModel.DeleteAllImageBoundingBox();
+		}
+	}
 
 	private async void OnDeleteSelectedClassClicked(object sender, RoutedEventArgs e)
 	{
@@ -272,16 +282,18 @@ public partial class MainWindow : Window
 		if (e.Key == Key.Left)
 		{
 			viewModel.PreviousImageCommand.Execute(null);
+			ZoomBorder.ResetMatrix();
 			e.Handled = true;
 		}
 		else if (e.Key == Key.Right)
 		{
 			viewModel.NextImageCommand.Execute(null);
+			ZoomBorder.ResetMatrix();
 			e.Handled = true;
 		}
-		else if (e.Key == Key.Escape)
+		else if (e.Key == Key.Space)
 		{
-			viewModel.CancelBoundingBoxDrawing();
+			ZoomBorder.ResetMatrix();
 		}
 		else if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
 		{
@@ -307,6 +319,7 @@ public partial class MainWindow : Window
 			if (int.TryParse(textBox.Text, out int index))
 			{
 				viewModel.GotoImage(index);
+				ZoomBorder.ResetMatrix();
 			}
 		}
 	}
@@ -351,8 +364,8 @@ public partial class MainWindow : Window
 		{
 			viewModel.CancelBoundingBoxDrawing();
 		}
-
 	}
+
 	private bool IsPointerInMenu(PointerPressedEventArgs e)
 	{
 		// Walk up the visual tree from the source
@@ -384,7 +397,7 @@ public partial class MainWindow : Window
 	private void ZoomExtentsCanva(object? sender, RoutedEventArgs e)
 	{
 		ZoomBorder.ResetMatrix();
-		ZoomBorder.ZoomTo(1, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
+		//ZoomBorder.ZoomTo(1, ImageLayer.Bounds.Width/2, ImageLayer.Bounds.Height/2);
 	}
 
 	private void OnAnnotationChecked(object? sender, RoutedEventArgs e)
@@ -399,6 +412,17 @@ public partial class MainWindow : Window
 		if (sender is ToggleButton button && button.DataContext is BoundingBox bb)
 		{
 			viewModel.SetSelectedAnnotation(bb, false);
+		}
+	}
+
+	private async void OnSmartProjectMergeClicked(object? sender, RoutedEventArgs e)
+	{
+		var dialog = new MergeProjectDialog();
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is MergeProjectDialog mpd)
+		{
+			viewModel.SmartProjectMerge();
 		}
 	}
 }

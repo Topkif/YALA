@@ -16,88 +16,96 @@
                     BorderThickness="{TemplateBinding BorderThickness}"
                     CornerRadius="3" />
 		</ControlTemplate>
-
 	</UserControl.Resources>
 
-	<Grid>
-		<!-- Rectangle -->
-		<Rectangle
-			IsHitTestVisible="False"
+	<Grid ClipToBounds="False">
+		<!-- Bounding Box Container -->
+		<Border
             Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-            Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-		    StrokeThickness="{Binding RealBoundingBoxStrokeSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}" >
-			<Rectangle.Fill>
-				<MultiBinding Converter="{StaticResource SelectedToFillBrushConverter}" ConverterParameter="0.2">
-					<Binding Path="BoundingBox.IsSelected" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
-					<Binding Path="BoundingBox.Color" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
-				</MultiBinding>
-			</Rectangle.Fill>
-		</Rectangle>
-		<TextBlock Text="{Binding BoundingBox.ClassName, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top">
+			<Grid>
+				<!-- Rectangle -->
+				<Rectangle
+                    IsHitTestVisible="False"
+                    Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+                    Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+                    Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+                    StrokeThickness="{Binding RealBoundingBoxStrokeSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}">
+					<Rectangle.Fill>
+						<MultiBinding Converter="{StaticResource SelectedToFillBrushConverter}" ConverterParameter="0.2">
+							<Binding Path="BoundingBox.IsSelected" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
+							<Binding Path="BoundingBox.Color" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
+						</MultiBinding>
+					</Rectangle.Fill>
+				</Rectangle>
+
+				<!-- Thumbs -->
+				<Thumb Name="TopThumb"
+                       Cursor="SizeNorthSouth"
+                       Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+                       Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+                       Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Top}"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
+                       HorizontalAlignment="Center" VerticalAlignment="Top"
+                       Template="{StaticResource ThumbTemplate}"
+                       DragStarted="OnThumbDragStarted"
+                       DragDelta="OnThumbDragDelta"
+                       DragCompleted="OnThumbDragCompleted"
+                       IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+
+				<Thumb Name="BottomThumb"
+                       Cursor="SizeNorthSouth"
+                       Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+                       Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+                       Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Bottom}"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
+                       HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                       Template="{StaticResource ThumbTemplate}"
+                       DragStarted="OnThumbDragStarted"
+                       DragDelta="OnThumbDragDelta"
+                       DragCompleted="OnThumbDragCompleted"
+                       IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+
+				<Thumb Name="LeftThumb"
+                       Cursor="SizeWestEast"
+                       Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+                       Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+                       Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Left}"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
+                       HorizontalAlignment="Left" VerticalAlignment="Center"
+                       Template="{StaticResource ThumbTemplate}"
+                       DragStarted="OnThumbDragStarted"
+                       DragDelta="OnThumbDragDelta"
+                       DragCompleted="OnThumbDragCompleted"
+                       IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+
+				<Thumb Name="RightThumb"
+                       Cursor="SizeWestEast"
+                       Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+                       Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+                       Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Right}"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
+                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Template="{StaticResource ThumbTemplate}"
+                       DragStarted="OnThumbDragStarted"
+                       DragDelta="OnThumbDragDelta"
+                       DragCompleted="OnThumbDragCompleted"
+                       IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+			</Grid>
+		</Border>
+
+		<!-- Class label floating above -->
+		<TextBlock
+            Text="{Binding BoundingBox.ClassName, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             Foreground="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             FontWeight="Bold"
-		    FontSize="{Binding RealClassNameSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-		    Margin="{Binding RealClassNameMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+            FontSize="{Binding RealClassNameSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+            IsHitTestVisible="False"
+            ZIndex="10"
+            Margin="{Binding RealClassNameMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Bottom}"
             HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            IsHitTestVisible="False"/>
-
-
-		<!-- Horizontal Top -->
-		<Thumb Name="TopThumb"
-			   Cursor="SizeNorthSouth"
-               Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-			   Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Top}"
-		       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
-               HorizontalAlignment="Center" VerticalAlignment="Top"
-               Template="{StaticResource ThumbTemplate}"
-               DragStarted="OnThumbDragStarted"
-               DragDelta="OnThumbDragDelta"
-               DragCompleted="OnThumbDragCompleted"
-               IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
-
-		<!-- Horizontal Bottom -->
-		<Thumb Name="BottomThumb"
-			   Cursor="SizeNorthSouth"
-               Width="{Binding BoundingBox.Width, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-			   Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Bottom}"
-               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
-               HorizontalAlignment="Center" VerticalAlignment="Bottom"
-               Template="{StaticResource ThumbTemplate}"
-               DragStarted="OnThumbDragStarted"
-               DragDelta="OnThumbDragDelta"
-               DragCompleted="OnThumbDragCompleted"
-               IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
-
-		<!-- Vertical Left -->
-		<Thumb Name="LeftThumb"
-			   Cursor="SizeWestEast"
-			   Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-               Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Left}"
-               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
-               HorizontalAlignment="Left" VerticalAlignment="Center"
-               Template="{StaticResource ThumbTemplate}"
-               DragStarted="OnThumbDragStarted"
-               DragDelta="OnThumbDragDelta"
-               DragCompleted="OnThumbDragCompleted"
-               IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
-
-		<!-- Vertical Right -->
-		<Thumb Name="RightThumb"
-			   Cursor="SizeWestEast"
-			   Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-               Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-               Margin="{Binding MinusRealBoundingBoxMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Converter={StaticResource MarginPositionConverter}, ConverterParameter=Right}"
-               Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
-               HorizontalAlignment="Right" VerticalAlignment="Center"
-               Template="{StaticResource ThumbTemplate}"
-               DragStarted="OnThumbDragStarted"
-               DragDelta="OnThumbDragDelta"
-               DragCompleted="OnThumbDragCompleted"
-               IsVisible="{Binding BoundingBox.EditingEnabled, Converter={StaticResource BoolToIsVisibleConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}" />
+            VerticalAlignment="Top" />
 	</Grid>
 </UserControl>

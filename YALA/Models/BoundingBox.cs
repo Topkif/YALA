@@ -9,6 +9,7 @@ namespace YALA.Models;
 
 public partial class BoundingBox : ObservableObject
 {
+	[ObservableProperty] int id;
 	[ObservableProperty] double tlx; // Top Left X coordinate
 	[ObservableProperty] double tly; // Top Left Y coordinate
 	[ObservableProperty] double width;

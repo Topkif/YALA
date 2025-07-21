@@ -62,7 +62,7 @@ public partial class ExportProjectDialog : UserControl
 
 	private async void OnBrowseClicked(object? sender, RoutedEventArgs e)
 	{
-		var window = this.VisualRoot as Window;
+		var window = VisualRoot as Window;
 		if (window is null) return;
 
 		var file = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
@@ -84,6 +84,6 @@ public partial class ExportProjectDialog : UserControl
 
 	private void OnCancelClicked(object? sender, RoutedEventArgs e)
 	{
-		DialogHost.Close("RootDialog", this);
+		DialogHost.Close("RootDialog", false);
 	}
 }

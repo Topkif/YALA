@@ -1,13 +1,14 @@
-﻿using System;
+﻿using Dapper;
+using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data;
-using Microsoft.Data.Sqlite;
-using Dapper;
+using System.Transactions;
 using YALA.Models;
-using System.Collections.ObjectModel;
 
 namespace YALA.Services;
 
@@ -129,7 +130,13 @@ public class DatabaseService
 	}
 	public ObservableCollection<LabellingClass> GetLabellingClasses()
 	{
-		var labellingClasses = connection?.Query<LabellingClass>("SELECT Id, Name, Color FROM Classes").ToList();
+		var labellingClasses = connection?.Query<LabellingClass>(@"SELECT 
+		Id, 
+		Name, 
+		Color, 
+		(SELECT COUNT(*) FROM Annotations WHERE ClassId = Classes.Id) AS NumberOfInstances
+		FROM 
+		Classes;").ToList();
 		if (labellingClasses != null)
 		{
 			labellingClasses.First().IsSelected = true;
@@ -176,20 +183,18 @@ public class DatabaseService
 
 	public void AddBoundingBox(BoundingBox boundingBox, string imagePath)
 	{
-		const string getImageIdSql = "SELECT Id FROM Images WHERE Path = @Path;";
 		const string insertAnnotationSql = @"
 		INSERT INTO Annotations (ImageId, ClassId, Tlx, Tly, Width, Height)
-		VALUES (@ImageId, @ClassId, @Tlx, @Tly, @Width, @Height);";
+		VALUES (
+			(SELECT Id FROM Images WHERE Path = @Path),
+			@ClassId, @Tlx, @Tly, @Width, @Height);
+		SELECT last_insert_rowid();";
 
 		using var transaction = connection?.BeginTransaction();
 
-		var imageId = connection?.ExecuteScalar<int?>(getImageIdSql, new { Path = imagePath }, transaction);
-		if (imageId is null)
-			throw new InvalidOperationException($"Image path '{imagePath}' not found in database.");
-
-		connection?.Execute(insertAnnotationSql, new
+		boundingBox.Id = connection!.ExecuteScalar<int>(insertAnnotationSql, new
 		{
-			ImageId = imageId,
+			Path = imagePath,
 			ClassId = boundingBox.ClassId,
 			Tlx = boundingBox.Tlx,
 			Tly = boundingBox.Tly,
@@ -200,21 +205,33 @@ public class DatabaseService
 		transaction?.Commit();
 	}
 
-	public void RemoveBoundingBox(BoundingBox boundingBox, string imagePath)
+	public void UpdateBoundingBox(BoundingBox newBoundingBox)
 	{
-		var sql = @"
-		DELETE FROM Annotations
-		WHERE ImageId = (SELECT Id FROM Images WHERE Path = @Path)
-		  AND ClassId = @ClassId AND Tlx = @Tlx AND Tly = @Tly AND Width = @Width AND Height = @Height;";
+		const string sql = @"
+		UPDATE Annotations
+		SET ClassId = @ClassId, Tlx = @Tlx, Tly = @Tly, Width = @Width, Height = @Height
+		WHERE Id = @Id;";
+
 		using var transaction = connection?.BeginTransaction();
 		connection?.Execute(sql, new
 		{
-			Path = imagePath,
-			ClassId = boundingBox.ClassId,
-			Tlx = boundingBox.Tlx,
-			Tly = boundingBox.Tly,
-			Width = boundingBox.Width,
-			Height = boundingBox.Height,
+			Id = newBoundingBox.Id,
+			ClassId = newBoundingBox.ClassId,
+			Tlx = newBoundingBox.Tlx,
+			Tly = newBoundingBox.Tly,
+			Width = newBoundingBox.Width,
+			Height = newBoundingBox.Height
+		}, transaction);
+		transaction?.Commit();
+	}
+
+	public void RemoveBoundingBox(BoundingBox boundingBox)
+	{
+		var sql = @"DELETE FROM Annotations	WHERE Id = @Id;";
+		using var transaction = connection?.BeginTransaction();
+		connection?.Execute(sql, new
+		{
+			Id = boundingBox.Id,
 		}, transaction);
 		transaction?.Commit();
 	}
@@ -232,7 +249,8 @@ public class DatabaseService
 	public ObservableCollection<BoundingBox> GetBoundingBoxes(string imagePath, bool editingEnabled = false)
 	{
 		var boundingBoxes = connection?.Query<BoundingBox>(@"
-		SELECT 
+		SELECT
+		A.Id,
 		A.ClassId,
 		A.Tlx,
 		A.Tly,
@@ -251,5 +269,13 @@ public class DatabaseService
 			return new ObservableCollection<BoundingBox>(boundingBoxes);
 		}
 		return new ObservableCollection<BoundingBox>();
+	}
+
+	public int GetInstancesOfClass(string className)
+	{
+		var sql = @"
+		SELECT COUNT(*) FROM Annotations
+		WHERE ClassId = (SELECT Id FROM Classes WHERE Name = @ClassName);";
+		return connection?.ExecuteScalar<int>(sql, new { ClassName = className }) ?? 0;
 	}
 }

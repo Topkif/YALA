@@ -103,6 +103,8 @@ public partial class MainWindowViewModel : ViewModelBase
 			}
 		}
 		LabellingClasses = databaseService.GetLabellingClasses();
+		LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
+
 	}
 
 	public void CreateNewClass((string, string) tuple)
@@ -111,6 +113,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
 		{
 			LabellingClasses = databaseService.GetLabellingClasses();
+			LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
 		}
 		else // Simulation mode
 		{
@@ -292,6 +295,11 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (CurrentImageBoundingBoxes.Remove(resizingBoundingBox))
 		{
 			CurrentImageBoundingBoxes.Add(resizingBoundingBox);
+			databaseService.UpdateBoundingBox(resizingBoundingBox);
+			// Class name can change so update the number of instances
+			LabellingClass? target = LabellingClasses.FirstOrDefault(x => x.Name == resizingBoundingBox.ClassName);
+			if (target is not null)
+				target.NumberOfInstances = databaseService.GetInstancesOfClass(resizingBoundingBox.ClassName);
 		}
 	}
 
@@ -300,7 +308,11 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
 		{
 			CurrentImageBoundingBoxes.Remove(boundingBox);
-			databaseService.RemoveBoundingBox(boundingBox, ImagesPaths[CurrentImageIndex-1]);
+			databaseService.RemoveBoundingBox(boundingBox);
+			// Update the number of instances
+			LabellingClass? target = LabellingClasses.FirstOrDefault(x => x.Name == boundingBox.ClassName);
+			if (target is not null)
+				target.NumberOfInstances = databaseService.GetInstancesOfClass(boundingBox.ClassName);
 		}
 		else
 		{
@@ -308,13 +320,13 @@ public partial class MainWindowViewModel : ViewModelBase
 		}
 	}
 
-	[RelayCommand]
-	private void DeleteAllImageBoundingBox()
+	public void DeleteAllImageBoundingBox()
 	{
 		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
 		{
 			CurrentImageBoundingBoxes.Clear();
 			databaseService.RemoveAllImagesBoundingBoxes(ImagesPaths[CurrentImageIndex-1]);
+			LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
 		}
 		else
 		{
@@ -333,7 +345,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (!isDrawingNewBoundingBox && DrawingBoundingBoxEnabled)
 		{
 			// Check if pointer is inside the CurrentImageBitmap within threshold
-			double threshold = 2; // Threshold to start drawing a BoundingBox in Pixels
+			double threshold = 30; // Threshold to start drawing a BoundingBox in Pixels
 			if (position.X < -threshold || position.Y < -threshold ||
 				position.X >= CurrentImageBitmap.Size.Width + threshold ||
 				position.Y >= CurrentImageBitmap.Size.Height + threshold)
@@ -370,6 +382,11 @@ public partial class MainWindowViewModel : ViewModelBase
 				if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
 				{
 					databaseService.AddBoundingBox(newBoundingBox, ImagesPaths[CurrentImageIndex - 1]);
+					LabellingClass? target = LabellingClasses.FirstOrDefault(x => x.Name == newBoundingBox.ClassName);
+					if (target is not null)
+					{
+						target.NumberOfInstances = databaseService.GetInstancesOfClass(newBoundingBox.ClassName);
+					}
 				}
 			}
 			newBoundingBox = null;
@@ -422,6 +439,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	public void CancelBoundingBoxDrawing()
 	{
 		isDrawingNewBoundingBox = false;
+		// Re enable editing if necessary
+		CurrentImageBoundingBoxes.ToList().ForEach(x => x.EditingEnabled = ResizingBoundingBoxEnabled);
 		if (newBoundingBox == null)
 			return;
 		CurrentImageBoundingBoxes.Remove(newBoundingBox);
@@ -445,6 +464,20 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		YoloExporter.ExportProject(exportPath, databaseService, ImagesPaths.ToList(), selectedClasses, trainRatio, valRatio, testRatio);
 
+	}
+
+	public void SmartProjectMerge()
+	{
+
+		//	public static void MergeProjects(DatabaseService currentDatabase,
+		//string incomingProjectPath,
+		//bool addClasses,
+		//bool addImages,
+		//bool addAnnotations,
+		//bool conflictKeepBoth,
+		//bool conflictKeepCurrent,
+		//bool conflictKeepIncoming)
+		//ProjectMerger.MergeProjects();
 	}
 
 }

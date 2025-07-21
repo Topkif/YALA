@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="YALA.Views.MergeProjectDialog">
+
+	<Grid RowDefinitions="Auto,*,*">
+
+		<!-- Path Selection -->
+		<StackPanel Margin="0,0,0,20">
+			<TextBlock Text="Incoming Project Path:" FontWeight="Bold" Margin="0,0,0,8"/>
+			<StackPanel Orientation="Horizontal">
+				<TextBox x:Name="FilePathTextBox" Margin="0,0,8,0" Width="260" IsReadOnly="True" />
+				<Button Content="Browse..." Click="OnBrowseClicked" />
+			</StackPanel>
+		</StackPanel>
+		
+		<!-- Export Selection -->
+		<StackPanel Grid.Row="1" Orientation="Vertical" Margin="10" Spacing="10">
+			<CheckBox x:Name="AddClassesCheckBox" Content="Add classes"/>
+			<CheckBox x:Name="AddImagesCheckBox" Content="Add images"/>
+			<CheckBox x:Name="AddAnnotationsCheckBox" Content="Add annotations" Checked="AddAnnotationsCheckBox_Checked" Unchecked="AddAnnotationsCheckBox_Unchecked"/>
+			<TextBlock Text="Annotations merge option" Margin="0,10,0,0" FontWeight="Bold"/>
+			<StackPanel Orientation="Horizontal" Spacing="20">
+				<StackPanel Orientation="Vertical" Spacing="5" Margin="20,0,0,0">
+					<RadioButton x:Name="KeepBothRadioButton" Content="Keep both" IsEnabled="False" IsChecked="True"/>
+					<RadioButton x:Name="KeepIncomingRadioButton" Content="Keep incoming" IsEnabled="False"/>
+					<RadioButton x:Name="KeepCurrentRadioButton" Content="Keep current" IsEnabled="False"/>
+				</StackPanel>
+			</StackPanel>
+		</StackPanel>
+
+		<!-- Exit buttons -->
+		<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0 10 0 0">
+			<Button Content="Cancel" Click="OnCancelClicked" />
+			<Button Content="Merge" Click="OnMergeClicked" Background="Red"/>
+		</StackPanel>
+	</Grid>
+</UserControl>

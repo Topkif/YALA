@@ -43,6 +43,8 @@
 							<MenuItem Header="Close current" Command="{Binding CloseCurrentProjectCommand}"/>
 							<Separator/>
 							<MenuItem Header="Add images" Click="OnAddImagesClicked" />
+							<MenuItem Header="Smart project merge" Click="OnSmartProjectMergeClicked" />
+							<MenuItem Header="Smart project split" />
 							<Separator/>
 							<MenuItem Header="Export annotations" Click="OnExportClassesClicked" />
 							<MenuItem Header="Export project for YOLO" Click="OnExportProjectYoloClicked" />
@@ -57,14 +59,14 @@
 						</MenuItem>
 					</Menu>
 
-					<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
-						<Button Classes="icon-button" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
-						<Button Classes="icon-button" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
-						<ToggleButton Classes="icon-button" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen" IsChecked="{Binding DrawingBoundingBoxEnabled}"/>
-						<ToggleButton Classes="icon-button" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
-						<Button Classes="icon-button" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
-						<Button Classes="icon-button" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>
-						<Button Classes="icon-button" ToolTip.Tip="Remove Current Image From Project" Content="Trash2" Click="RemoveCurrentImageFromProjectClicked" Tag="{Binding}" />
+					<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" >
+						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Previous Image" Tag="25" Content="ChevronLeft" Command="{Binding PreviousImageCommand}"/>
+						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
+						<ToggleButton Classes="icon-button" Focusable="False" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen" IsChecked="{Binding DrawingBoundingBoxEnabled}"/>
+						<ToggleButton Classes="icon-button" Focusable="False" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
+						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
+						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>
+						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Remove Current Image From Project" Content="Trash2" Click="RemoveCurrentImageFromProjectClicked" Tag="{Binding}" />
 					</StackPanel>
 				</Grid>
 			</Border>
@@ -77,7 +79,7 @@
 				</Grid.ColumnDefinitions>
 
 				<!-- Image Display Area -->
-				<Grid Grid.Column="0" Margin="10">
+				<Grid Grid.Column="0">
 					<ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
 						<paz:ZoomBorder Name="ZoomBorder" ZoomChanged="OnZoomChanged" Stretch="None" ZoomSpeed="1.2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
 						<Grid x:Name="ImageLayer">
@@ -172,7 +174,7 @@
 							<StackPanel Spacing="8">
 								<Grid ColumnDefinitions="Auto,*">
 									<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"  VerticalAlignment="Center"/>
-									<Button Grid.Column="1" Classes="icon-button" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip.Tip="Delete All Image Annotations" Content="Trash2" Command="{Binding DeleteAllImageBoundingBoxCommand}" Tag="{Binding}" />
+									<Button Grid.Column="1" Classes="icon-button" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip.Tip="Delete All Image Annotations" Content="Trash2" Click="DeleteAllImageBoundingBox" Tag="{Binding}" />
 								</Grid>
 								<ItemsControl ItemsSource="{Binding CurrentImageBoundingBoxes}">
 									<ItemsControl.ItemTemplate>
