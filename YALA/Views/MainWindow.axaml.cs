@@ -37,10 +37,14 @@ public partial class MainWindow : Window
 	}
 
 	const double boundingBoxStrokeSize = 3.0;
-	const double boundingBoxThumbSize = 20.0;
-	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX/(1000/viewModel.CurrentImageBitmap.Size.Width);
-	public double RealBoundingBoxThumbSize => boundingBoxThumbSize / ZoomBorder.ZoomX/(1000/viewModel.CurrentImageBitmap.Size.Width);
+	const double boundingBoxThumbSize = 30.0;
+	const double classNameSize = 18.0;
+	const double classNameMargin = 5.0;
+	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX;
+	public double RealBoundingBoxThumbSize => boundingBoxThumbSize / ZoomBorder.ZoomX;
 	public double MinusRealBoundingBoxMargin => -(RealBoundingBoxThumbSize - RealBoundingBoxStrokeSize)/ 2;
+	public double RealClassNameSize => classNameSize / ZoomBorder.ZoomX;
+	public Thickness RealClassNameMargin => new(classNameMargin / ZoomBorder.ZoomX);
 
 
 	private readonly MainWindowViewModel viewModel = App.MainVM;

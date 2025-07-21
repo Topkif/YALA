@@ -79,7 +79,6 @@
 				<!-- Image Display Area -->
 				<Grid Grid.Column="0" Margin="10">
 					<ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
-
 						<paz:ZoomBorder Name="ZoomBorder" ZoomChanged="OnZoomChanged" Stretch="None" ZoomSpeed="1.2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
 						<Grid x:Name="ImageLayer">
 							<Viewbox Stretch="Uniform" UseLayoutRounding="False">

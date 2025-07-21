@@ -34,6 +34,15 @@
 				</MultiBinding>
 			</Rectangle.Fill>
 		</Rectangle>
+		<TextBlock Text="{Binding BoundingBox.ClassName, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+            Foreground="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+            FontWeight="Bold"
+		    FontSize="{Binding RealClassNameSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+		    Margin="{Binding RealClassNameMargin, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            IsHitTestVisible="False"/>
+
 
 		<!-- Horizontal Top -->
 		<Thumb Name="TopThumb"
