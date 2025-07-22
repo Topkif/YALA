@@ -15,7 +15,7 @@
 		xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
 		xmlns:paz="using:Avalonia.Controls.PanAndZoom"
 		xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
-        Title="YALA"
+        Title="{Binding ProjectName}"
 		RequestedThemeVariant="Dark"		
 		KeyDown="OnKeyDown"
 		KeyUp="OnKeyUp"
@@ -38,9 +38,9 @@
 				<Grid ColumnDefinitions="*,Auto,*" >
 					<Menu>
 						<MenuItem Header="Project">
-							<MenuItem Header="Create new" Click="OnCreateNewProjectClick"/>
-							<MenuItem Header="Open existing" Click="OnOpenExistingProjectClick" />
-							<MenuItem Header="Close current" Command="{Binding CloseCurrentProjectCommand}"/>
+							<MenuItem Header="New" Click="OnCreateNewProjectClick"/>
+							<MenuItem Header="Open" Click="OnOpenExistingProjectClick" />
+							<MenuItem Header="Close" Command="{Binding CloseCurrentProjectCommand}"/>
 							<Separator/>
 							<MenuItem Header="Add images" Click="OnAddImagesClicked" />
 							<MenuItem Header="Smart project merge" Click="OnSmartProjectMergeClicked" />
@@ -217,7 +217,7 @@
 			</Grid>
 			<Grid Grid.Row="2" Margin="2">
 				<Grid.ColumnDefinitions>
-					<ColumnDefinition MinWidth="75" Width="Auto"/>
+					<ColumnDefinition MinWidth="100" Width="Auto"/>
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
 				<Label x:Name="MousePositionLabel" FontSize="12"

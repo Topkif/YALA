@@ -19,5 +19,4 @@ public partial class BoundingBox : ObservableObject
 	[ObservableProperty] string className = "";
 	[ObservableProperty] bool editingEnabled;
 	[ObservableProperty] bool isSelected;
-	public double StrokeScaleFactor { get; set; } // No need for OnPropertyChanged
 }

@@ -17,13 +17,10 @@ public class DatabaseService
 	public IDbConnection? connection;
 	public string absolutePath = "";
 
-	public void Initialize(string dbPath)
+	public void CreateYalaTables(string dbPath)
 	{
-		connection = new SqliteConnection($"Data Source={dbPath}");
-		connection.Open();
-		absolutePath = dbPath;
-
-		connection.Execute(@"
+		Open(dbPath);
+		connection!.Execute(@"
             CREATE TABLE IF NOT EXISTS Images (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Path TEXT NOT NULL UNIQUE
@@ -49,12 +46,10 @@ public class DatabaseService
         ");
 	}
 
-	public bool TablesExist(string dbPath)
+	public bool DoTablesExist(string dbPath)
 	{
-		using IDbConnection connection = new SqliteConnection($"Data Source={dbPath}");
-		connection.Open();
-
-		var result = connection.Query<string>(@"
+		Open(dbPath);
+		var result = connection!.Query<string>(@"
 		SELECT name FROM sqlite_master 
 		WHERE type = 'table' AND name IN ('Images', 'Classes', 'Annotations');
 	").ToList();
@@ -72,11 +67,37 @@ public class DatabaseService
 	public void Close()
 	{
 		connection?.Close();
+		connection?.Dispose();
+	}
+
+	public void UpdateNumberOfInstances(ObservableCollection<LabellingClass> labellingClasses)
+	{
+		var counts = connection?.Query<(int ClassId, int Count)>(
+			@"SELECT ClassId, COUNT(*) AS Count FROM Annotations GROUP BY ClassId;")
+			.ToDictionary(x => x.ClassId, x => x.Count);
+
+		if (counts != null)
+		{
+			foreach (var cls in labellingClasses)
+			{
+				if (counts.TryGetValue(cls.Id, out var count))
+					cls.NumberOfInstances = count;
+				else
+					cls.NumberOfInstances = 0;
+			}
+		}
+	}
+	public int GetInstancesOfClass(string className)
+	{
+		var sql = @"
+		SELECT COUNT(*) FROM Annotations
+		WHERE ClassId = (SELECT Id FROM Classes WHERE Name = @ClassName);";
+		return connection?.ExecuteScalar<int>(sql, new { ClassName = className }) ?? 0;
 	}
 
 	public void AddClasses(List<string> classes)
 	{
-		var sql = "INSERT INTO Classes (Name) VALUES (@Name);";
+		var sql = "INSERT OR IGNORE INTO Classes (Name) VALUES (@Name);";
 
 		using var transaction = connection?.BeginTransaction();
 		foreach (var className in classes)
@@ -88,7 +109,7 @@ public class DatabaseService
 
 	public void AddClassesAndColor(List<(string, string)> classes)
 	{
-		var sql = "INSERT INTO Classes (Name, Color) VALUES (@Name, @Color);";
+		var sql = "INSERT OR IGNORE INTO Classes (Name, Color) VALUES (@Name, @Color);";
 
 		using var transaction = connection?.BeginTransaction();
 		foreach (var className in classes)
@@ -147,7 +168,7 @@ public class DatabaseService
 
 	public void AddImages(List<string> imagesPaths)
 	{
-		var sql = "INSERT INTO Images (Path) VALUES (@Path);";
+		var sql = "INSERT OR IGNORE INTO Images (Path) VALUES (@Path);";
 
 		using var transaction = connection?.BeginTransaction();
 		foreach (var imagePath in imagesPaths)
@@ -205,6 +226,50 @@ public class DatabaseService
 		transaction?.Commit();
 	}
 
+	public void AddBoundingBoxListSafe(List<BoundingBox> boundingBoxList, string imagePath)
+	{
+		const string insertAnnotationSql = @"
+		INSERT INTO Annotations (ImageId, ClassId, Tlx, Tly, Width, Height)
+		VALUES (@ImageId, @ClassId, @Tlx, @Tly, @Width, @Height);";
+
+		using var transaction = connection?.BeginTransaction();
+
+		// Get ImageId once
+		var imageId = connection?.ExecuteScalar<int?>(
+			"SELECT Id FROM Images WHERE Path = @Path;",
+			new { Path = imagePath }, transaction);
+
+		if (imageId is null)
+		{
+			transaction?.Rollback(); // Calling rollback explicitly is cleaner to avoid leaving a transaction open
+			return;
+		}
+
+		foreach (var boundingBox in boundingBoxList)
+		{
+			// Get ClassId for each bounding box
+			var classId = connection?.ExecuteScalar<int?>(
+				"SELECT Id FROM Classes WHERE Name = @ClassName;",
+				new { ClassName = boundingBox.ClassName }, transaction);
+
+			if (classId is null)
+				continue; // Skip if class not found
+
+			connection!.Execute(insertAnnotationSql, new
+			{
+				ImageId = imageId.Value,
+				ClassId = classId.Value,
+				Tlx = boundingBox.Tlx,
+				Tly = boundingBox.Tly,
+				Width = boundingBox.Width,
+				Height = boundingBox.Height
+			}, transaction);
+		}
+
+		transaction?.Commit();
+	}
+
+
 	public void UpdateBoundingBox(BoundingBox newBoundingBox)
 	{
 		const string sql = @"
@@ -245,6 +310,23 @@ public class DatabaseService
 		connection?.Execute(sql, new { Path = imagePath }, transaction);
 		transaction?.Commit();
 	}
+	public void RemoveImageAnnotationsForClasses(string imagePath, List<string> classNamesToRemoveForCurrentImage)
+	{
+		const string sql = @"
+		DELETE FROM Annotations
+		WHERE ImageId = (SELECT Id FROM Images WHERE Path = @Path)
+		  AND ClassId IN (SELECT Id FROM Classes WHERE Name IN @ClassNames);";
+
+		using var transaction = connection?.BeginTransaction();
+
+		connection?.Execute(sql, new
+		{
+			Path = imagePath,
+			ClassNames = classNamesToRemoveForCurrentImage
+		}, transaction);
+
+		transaction?.Commit();
+	}
 
 	public ObservableCollection<BoundingBox> GetBoundingBoxes(string imagePath, bool editingEnabled = false)
 	{
@@ -269,13 +351,5 @@ public class DatabaseService
 			return new ObservableCollection<BoundingBox>(boundingBoxes);
 		}
 		return new ObservableCollection<BoundingBox>();
-	}
-
-	public int GetInstancesOfClass(string className)
-	{
-		var sql = @"
-		SELECT COUNT(*) FROM Annotations
-		WHERE ClassId = (SELECT Id FROM Classes WHERE Name = @ClassName);";
-		return connection?.ExecuteScalar<int>(sql, new { ClassName = className }) ?? 0;
 	}
 }

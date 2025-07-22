@@ -30,8 +30,9 @@ public partial class MainWindowViewModel : ViewModelBase
 	[ObservableProperty] int currentImageIndex = 1;
 	[ObservableProperty] string currentImageAbsolutePath = "";
 	[ObservableProperty] Bitmap currentImageBitmap;
-	[ObservableProperty] bool resizingBoundingBoxEnabled;
+	[ObservableProperty] bool resizingBoundingBoxEnabled = true;
 	[ObservableProperty] bool drawingBoundingBoxEnabled = true;
+	[ObservableProperty] string projectName = "YALA (No opened project)";
 
 	// Variables for bounding box resizing
 	BoundingBox resizingBoundingBox = new();
@@ -39,12 +40,12 @@ public partial class MainWindowViewModel : ViewModelBase
 	ResizeDirection resizeDirection;
 	double resizeLength;
 
-	// Varables for boundingbox creation
+	// Variables for boundingbox creation
 	private bool isDrawingNewBoundingBox = false;
 	private Point startPoint;
 	private BoundingBox? newBoundingBox;
 
-	DatabaseService databaseService = new();
+	public DatabaseService databaseService = new();
 
 	// Force notify collection changed event when CurrentImageBoundingBoxes is changed by subscribing to the new collection
 	private NotifyCollectionChangedEventHandler? _collectionChangedHandler;
@@ -84,13 +85,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public void CreateNewProject(string dbPath, string classesPath)
 	{
-		if (databaseService.TablesExist(dbPath))
+		if (!databaseService.DoTablesExist(dbPath))
 		{
-			databaseService.Open(dbPath);
-		}
-		else
-		{
-			databaseService.Initialize(dbPath);
+			databaseService.CreateYalaTables(dbPath);
 			if (classesPath.EndsWith(".yalac"))
 			{
 				List<(string, string)> classes = ClassesFileParser.ParseYalaClassNamesAndColor(classesPath);
@@ -103,8 +100,8 @@ public partial class MainWindowViewModel : ViewModelBase
 			}
 		}
 		LabellingClasses = databaseService.GetLabellingClasses();
-		LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
-
+		//databaseService.UpdateNumberOfInstances(LabellingClasses);
+		ProjectName = $"YALA ({dbPath})";
 	}
 
 	public void CreateNewClass((string, string) tuple)
@@ -113,26 +110,22 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
 		{
 			LabellingClasses = databaseService.GetLabellingClasses();
-			LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
+			//LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
 		}
 		else // Simulation mode
 		{
-
 			LabellingClass newClass = new() { Name = tuple.Item1 };
 			newClass.SetColorSilently(tuple.Item2); // Set color without firing PropertyChanged
 			LabellingClasses.Add(newClass);
 			SetSelectedLabel(LabellingClasses.Last());
 		}
 	}
-	public void OpenExistingProject(string path)
+	public void OpenExistingProject(string dbPath)
 	{
-		if (databaseService.TablesExist(path))
+		databaseService.Close();
+		if (!databaseService.DoTablesExist(dbPath))
 		{
-			databaseService.Open(path);
-		}
-		else
-		{
-			databaseService.Initialize(path);
+			databaseService.CreateYalaTables(dbPath);
 		}
 		LabellingClasses = databaseService.GetLabellingClasses();
 		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected == true);
@@ -143,12 +136,20 @@ public partial class MainWindowViewModel : ViewModelBase
 			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
 		}
+		ProjectName = $"YALA ({dbPath})";
 	}
 
 	[RelayCommand]
 	private void CloseCurrentProject()
 	{
 		databaseService.Close();
+		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+		CurrentImageBoundingBoxes.Clear();
+		ImagesPaths.Clear();
+		CurrentImageAbsolutePath = String.Empty;
+		CurrentImageIndex = 1;
+		LabellingClasses.Clear();
+		ProjectName = "YALA (No opened project)";
 	}
 
 	public void UpdateClassColor(LabellingClass labelingClass)
@@ -235,14 +236,16 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
 		{
 			databaseService.RemoveImage(ImagesPaths[CurrentImageIndex-1]);
+			databaseService.UpdateNumberOfInstances(LabellingClasses);
 			CurrentImageBoundingBoxes.Clear();
 			ImagesPaths = databaseService.GetImagesPaths();
 			if (ImagesPaths.Count == 0)
 				return;
+			if (CurrentImageIndex>ImagesPaths.Count)
+				CurrentImageIndex=ImagesPaths.Count;
 			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex-1]); // Load the first image by default
 			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 		}
-
 	}
 
 	public void GotoImage(int imageId)
@@ -326,7 +329,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			CurrentImageBoundingBoxes.Clear();
 			databaseService.RemoveAllImagesBoundingBoxes(ImagesPaths[CurrentImageIndex-1]);
-			LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
+			databaseService.UpdateNumberOfInstances(LabellingClasses);
 		}
 		else
 		{
@@ -466,18 +469,32 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	}
 
-	public void SmartProjectMerge()
+	public void SmartMergeProjects(string incomingProjectPath, bool addClasses, bool addImages, bool addAnnotations, bool conflictKeepBoth, bool conflictKeepIncoming, bool conflictKeepCurrent)
 	{
+		ConflictKeepBehaviour conflictKeepBehaviour = (ConflictKeepBehaviour)(conflictKeepBoth == true ? 1 : conflictKeepIncoming == true ? 2 : conflictKeepCurrent == true ? 3 : 0);
 
-		//	public static void MergeProjects(DatabaseService currentDatabase,
-		//string incomingProjectPath,
-		//bool addClasses,
-		//bool addImages,
-		//bool addAnnotations,
-		//bool conflictKeepBoth,
-		//bool conflictKeepCurrent,
-		//bool conflictKeepIncoming)
-		//ProjectMerger.MergeProjects();
+		ProjectMerger.MergeProjects(databaseService,
+			incomingProjectPath,
+			addClasses,
+			addImages,
+			addAnnotations,
+			conflictKeepBehaviour);
+
+		if (addClasses)
+		{
+			LabellingClasses = databaseService.GetLabellingClasses();
+		}
+		if (addImages || addAnnotations)
+		{
+			ImagesPaths = databaseService.GetImagesPaths();
+			if (ImagesPaths.Count > 0)
+			{
+				CurrentImageIndex = 1;
+				CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+				CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+			}
+		}
 	}
 
 }

@@ -63,7 +63,6 @@ public partial class MainWindow : Window
 
 		foreach (var bbox in viewModel.CurrentImageBoundingBoxes)
 		{
-			bbox.StrokeScaleFactor = ZoomBorder.ZoomX; // Stroke of 3 pixels by default at 100% zoom
 			var control = new BoundingBoxControl
 			{
 				BoundingBox = bbox
@@ -283,17 +282,23 @@ public partial class MainWindow : Window
 		{
 			viewModel.PreviousImageCommand.Execute(null);
 			ZoomBorder.ResetMatrix();
+			viewModel.CancelBoundingBoxDrawing();
 			e.Handled = true;
 		}
 		else if (e.Key == Key.Right)
 		{
 			viewModel.NextImageCommand.Execute(null);
 			ZoomBorder.ResetMatrix();
+			viewModel.CancelBoundingBoxDrawing();
 			e.Handled = true;
 		}
 		else if (e.Key == Key.Space)
 		{
 			ZoomBorder.ResetMatrix();
+		}
+		else if (e.Key == Key.Escape)
+		{
+			viewModel.CancelBoundingBoxDrawing();
 		}
 		else if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
 		{
@@ -417,12 +422,21 @@ public partial class MainWindow : Window
 
 	private async void OnSmartProjectMergeClicked(object? sender, RoutedEventArgs e)
 	{
+		if (viewModel?.databaseService?.connection?.State == System.Data.ConnectionState.Closed)
+			return;
+
 		var dialog = new MergeProjectDialog();
 		var result = await DialogHost.Show(dialog, "RootDialog");
 
 		if (result is MergeProjectDialog mpd)
 		{
-			viewModel.SmartProjectMerge();
+			viewModel?.SmartMergeProjects(mpd.IncomingPath,
+				mpd.AddClassesCheckBox.IsChecked == true ? true : false,
+				mpd.AddImagesCheckBox.IsChecked == true ? true : false,
+				mpd.AddAnnotationsCheckBox.IsChecked == true ? true : false,
+				mpd.KeepBothRadioButton.IsChecked == true ? true : false,
+				mpd.KeepIncomingRadioButton.IsChecked == true ? true : false,
+				mpd.KeepCurrentRadioButton.IsChecked == true ? true : false);
 		}
 	}
 }

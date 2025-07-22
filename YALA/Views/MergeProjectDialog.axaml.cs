@@ -22,7 +22,7 @@ public partial class MergeProjectDialog : UserControl
 
 		var file = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
 		{
-			Title = "Create New Project Database",
+			Title = "Import project to merge",
 			AllowMultiple = false,
 			SuggestedFileName = "project.yala",
 			FileTypeFilter = new[]

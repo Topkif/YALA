@@ -14,3 +14,10 @@ public enum ResizeDirection
 	Right,
 	None
 }
+public enum ConflictKeepBehaviour
+{
+	None = 0,
+	Both = 1,
+	Incoming = 2,
+	Current = 3,
+}
