@@ -130,6 +130,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		LabellingClasses = databaseService.GetLabellingClasses();
 		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected == true);
 		ImagesPaths = databaseService.GetImagesPaths();
+		CurrentImageIndex = 1;
 		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
 		{
 			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
@@ -202,7 +203,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		.ToList();
 			databaseService.AddImages(relativePaths);
 			ImagesPaths = databaseService.GetImagesPaths();
-			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+			CurrentImageIndex = ImagesPaths.Count;
+			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex-1]); // Load the first image by default
 			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 		}
 	}
@@ -269,30 +271,52 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		resizeLength = delta;
 
+		double maxWidth = CurrentImageBitmap.Size.Width;
+		double maxHeight = CurrentImageBitmap.Size.Height;
+
 		switch (resizeDirection)
 		{
 			case ResizeDirection.Top:
-				resizingBoundingBox.Tly += resizeLength;
-				resizingBoundingBox.Height -= resizeLength;
-				break;
+				{
+					double newTly = resizingBoundingBox.Tly + delta;
+					newTly = Math.Max(0, newTly);
+					double newHeight = resizingBoundingBox.Tly + resizingBoundingBox.Height - newTly;
+					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - newTly));
 
+					resizingBoundingBox.Tly = newTly;
+					resizingBoundingBox.Height = newHeight;
+					break;
+				}
 			case ResizeDirection.Bottom:
-				resizingBoundingBox.Height += resizeLength;
-				break;
-
+				{
+					double newHeight = resizingBoundingBox.Height + delta;
+					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - resizingBoundingBox.Tly));
+					resizingBoundingBox.Height = newHeight;
+					break;
+				}
 			case ResizeDirection.Left:
-				resizingBoundingBox.Tlx += resizeLength;
-				resizingBoundingBox.Width -= resizeLength;
-				break;
+				{
+					double newTlx = resizingBoundingBox.Tlx + delta;
+					newTlx = Math.Max(0, newTlx);
+					double newWidth = resizingBoundingBox.Tlx + resizingBoundingBox.Width - newTlx;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - newTlx));
 
+					resizingBoundingBox.Tlx = newTlx;
+					resizingBoundingBox.Width = newWidth;
+					break;
+				}
 			case ResizeDirection.Right:
-				resizingBoundingBox.Width += resizeLength;
-				break;
-
-			default:
-				break;
+				{
+					double newWidth = resizingBoundingBox.Width + delta;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - resizingBoundingBox.Tlx));
+					resizingBoundingBox.Width = newWidth;
+					break;
+				}
 		}
 	}
+
+
+
 	public void OnThumbDragCompleted()
 	{
 		if (CurrentImageBoundingBoxes.Remove(resizingBoundingBox))
@@ -469,7 +493,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	}
 
-	public void SmartMergeProjects(string incomingProjectPath, bool addClasses, bool addImages, bool addAnnotations, bool conflictKeepBoth, bool conflictKeepIncoming, bool conflictKeepCurrent)
+	public void MergeProjects(string incomingProjectPath, bool addClasses, bool addImages, bool addAnnotations, bool conflictKeepBoth, bool conflictKeepIncoming, bool conflictKeepCurrent)
 	{
 		ConflictKeepBehaviour conflictKeepBehaviour = (ConflictKeepBehaviour)(conflictKeepBoth == true ? 1 : conflictKeepIncoming == true ? 2 : conflictKeepCurrent == true ? 3 : 0);
 
@@ -495,6 +519,11 @@ public partial class MainWindowViewModel : ViewModelBase
 				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
 			}
 		}
+	}
+
+	public void SplitProject(List<int> splitImagesQuantities, bool randomize, string newBasePath)
+	{
+		ProjectSplitter.SplitProject(databaseService, splitImagesQuantities, randomize, newBasePath);
 	}
 
 }

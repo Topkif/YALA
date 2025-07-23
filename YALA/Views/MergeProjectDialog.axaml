@@ -21,7 +21,7 @@
 			<CheckBox x:Name="AddClassesCheckBox" Content="Add classes"/>
 			<CheckBox x:Name="AddImagesCheckBox" Content="Add images"/>
 			<CheckBox x:Name="AddAnnotationsCheckBox" Content="Add annotations" Checked="AddAnnotationsCheckBox_Checked" Unchecked="AddAnnotationsCheckBox_Unchecked"/>
-			<TextBlock Text="Annotations merge option" Margin="0,10,0,0" FontWeight="Bold"/>
+			<TextBlock Text="Annotations merge behaviour in case of conflict" Margin="0,10,0,0" FontWeight="Bold"/>
 			<StackPanel Orientation="Horizontal" Spacing="20">
 				<StackPanel Orientation="Vertical" Spacing="5" Margin="20,0,0,0">
 					<RadioButton x:Name="KeepBothRadioButton" Content="Keep both" IsEnabled="False" IsChecked="True"/>

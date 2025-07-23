@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 xmlns:view="using:YALA.Views"
+			 x:DataType="view:SplitProjectDialog"
+             x:Class="YALA.Views.SplitProjectDialog">
+
+
+	<StackPanel Margin="20">
+		<!-- Path Selection -->
+		<StackPanel Margin="0,0,0,20">
+			<TextBlock Text="Splitted Project Sample Name:" FontWeight="Bold" Margin="0,0,0,8"/>
+			<TextBox x:Name="FilePathTextBox" Margin="0,0,8,0" Width="260" IsReadOnly="False" TextChanged="FilePathTextBoxTextChanged"/>
+			<Label x:Name="FilePathErrorLabel" Margin="0,0,8,0" Width="260"/>
+		</StackPanel>
+
+		<!-- Split Count -->
+		<StackPanel Margin="0,0,0,20">
+			<TextBlock Text="How many projects to split into:" FontWeight="Bold" Margin="0,0,0,8"/>
+			<NumericUpDown x:Name="SplitCountUpDown" Minimum="2" Maximum="50" Value="2" ParsingNumberStyle="Integer" FormatString="F0" ValueChanged="OnSplitCountUpDownValueChanged"/>
+		</StackPanel>
+
+		<!-- Sliders -->
+		<ScrollViewer MaxHeight="300" Margin="0,0,0,20">
+			<StackPanel>
+				<TextBlock Text="Project Split Ratios:" FontWeight="Bold" Margin="0,0,0,8"/>
+				<ItemsControl ItemsSource="{Binding SplittedProjectsRatios}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate >
+							<StackPanel Margin="0,0,0,10">
+								<TextBlock Text="{Binding DisplayLabel}" />
+								<Slider Minimum="0" Maximum="1" TickFrequency="0.01"
+										Value="{Binding RawRatio, Mode=TwoWay}" />
+							</StackPanel>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</StackPanel>
+		</ScrollViewer>
+
+		<!-- Randomize Checkbox -->
+		<CheckBox x:Name="RandomizeCheckBox" Content="Randomize Split" Margin="0,0,0,20"/>
+
+		<!-- Buttons -->
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+			<Button Content="Cancel" Click="OnCancelClicked" />
+			<Button x:Name="SplitButton" Content="Split" Click="OnSplitClicked" Background="Red"/>
+		</StackPanel>
+	</StackPanel>
+
+</UserControl>

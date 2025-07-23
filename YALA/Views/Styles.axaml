@@ -106,7 +106,4 @@
 		<Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
 	</Style>
 
-
-
-
 </Styles>

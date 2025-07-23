@@ -420,7 +420,7 @@ public partial class MainWindow : Window
 		}
 	}
 
-	private async void OnSmartProjectMergeClicked(object? sender, RoutedEventArgs e)
+	private async void OnProjectMergeClicked(object? sender, RoutedEventArgs e)
 	{
 		if (viewModel?.databaseService?.connection?.State == System.Data.ConnectionState.Closed)
 			return;
@@ -430,13 +430,29 @@ public partial class MainWindow : Window
 
 		if (result is MergeProjectDialog mpd)
 		{
-			viewModel?.SmartMergeProjects(mpd.IncomingPath,
+			viewModel?.MergeProjects(mpd.IncomingPath,
 				mpd.AddClassesCheckBox.IsChecked == true ? true : false,
 				mpd.AddImagesCheckBox.IsChecked == true ? true : false,
 				mpd.AddAnnotationsCheckBox.IsChecked == true ? true : false,
 				mpd.KeepBothRadioButton.IsChecked == true ? true : false,
 				mpd.KeepIncomingRadioButton.IsChecked == true ? true : false,
 				mpd.KeepCurrentRadioButton.IsChecked == true ? true : false);
+		}
+	}
+	
+	private async void OnProjectSplitClicked(object? sender, RoutedEventArgs e)
+	{
+		if (viewModel?.databaseService?.connection?.State == System.Data.ConnectionState.Closed)
+			return;
+
+		var dialog = new SplitProjectDialog(viewModel!.ImagesPaths.Count, viewModel.databaseService.absolutePath);
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is SplitProjectDialog spd)
+		{
+			viewModel.SplitProject(spd.SplittedProjectsRatios.Select(x => x.ImageCountWithCorrection).ToList(),
+				spd.RandomizeCheckBox.IsChecked == true,
+				spd.fileNameWithoutExt);
 		}
 	}
 }
