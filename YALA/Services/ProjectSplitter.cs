@@ -26,7 +26,7 @@ public class ProjectSplitter
 		{
 			if (splitImagesQuantities[i] == 0) continue;
 
-			string splittedDbPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(databaseService.absolutePath), newBasePath+$"_{i}.yala");
+			string splittedDbPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(databaseService.absolutePath), newBasePath+$"_{i+1}.yala");
 			DatabaseService splittedDatabaseService = new();
 			if (splittedDatabaseService.DoTablesExist(splittedDbPath))
 			{
