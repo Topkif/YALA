@@ -38,7 +38,6 @@ public partial class MainWindowViewModel : ViewModelBase
 	BoundingBox resizingBoundingBox = new();
 	public LabellingClass? selectedClass = null;
 	ResizeDirection resizeDirection;
-	double resizeLength;
 
 	// Variables for boundingbox creation
 	private bool isDrawingNewBoundingBox = false;
@@ -78,7 +77,6 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		// Load some default values to test
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
-		ImagesPaths.Add("../../../Assets/notfound.png");
 		LabellingClasses.Add(new LabellingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 0, IsSelected = true });
 		LabellingClasses.Add(new LabellingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 0, IsSelected = false });
 		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected);
@@ -276,9 +274,9 @@ public partial class MainWindowViewModel : ViewModelBase
 		resizeDirection = direction;
 	}
 
-	public void OnThumbDragDelta(double delta)
+	public void OnThumbDragDelta(double xDelta, double yDelta)
 	{
-		resizeLength = delta;
+		double delta = xDelta+yDelta; // No need to do pythagoran theorem as we only resize in one direction at a time
 
 		double maxWidth = CurrentImageBitmap.Size.Width;
 		double maxHeight = CurrentImageBitmap.Size.Height;
@@ -287,7 +285,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			case ResizeDirection.Top:
 				{
-					double newTly = resizingBoundingBox.Tly + delta;
+					double newTly = resizingBoundingBox.Tly + yDelta;
 					newTly = Math.Max(0, newTly);
 					double newHeight = resizingBoundingBox.Tly + resizingBoundingBox.Height - newTly;
 					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - newTly));
@@ -321,6 +319,27 @@ public partial class MainWindowViewModel : ViewModelBase
 					resizingBoundingBox.Width = newWidth;
 					break;
 				}
+
+			case ResizeDirection.TopLeft:
+				{
+					// Top
+					double newTly = resizingBoundingBox.Tly + yDelta;
+					newTly = Math.Max(0, newTly);
+					double newHeight = resizingBoundingBox.Tly + resizingBoundingBox.Height - newTly;
+					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - newTly));
+					resizingBoundingBox.Tly = newTly;
+					resizingBoundingBox.Height = newHeight;
+
+					// Left
+					double newTlx = resizingBoundingBox.Tlx + xDelta;
+					newTlx = Math.Max(0, newTlx);
+					double newWidth = resizingBoundingBox.Tlx + resizingBoundingBox.Width - newTlx;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - newTlx));
+					resizingBoundingBox.Tlx = newTlx;
+					resizingBoundingBox.Width = newWidth;
+				}
+				break;
+
 		}
 	}
 
