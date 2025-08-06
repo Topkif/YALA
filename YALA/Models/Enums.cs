@@ -12,7 +12,12 @@ public enum ResizeDirection
 	Bottom,
 	Left,
 	Right,
+	TopLeft,
+	TopRight,
+	BottomLeft,
+	BottomRight,
 	None
+
 }
 public enum ConflictKeepBehaviour
 {

@@ -41,6 +41,10 @@ public partial class BoundingBoxControl : UserControl
 			"BottomThumb" => ResizeDirection.Bottom,
 			"LeftThumb" => ResizeDirection.Left,
 			"RightThumb" => ResizeDirection.Right,
+			"TopLeftThumb" => ResizeDirection.TopLeft,
+			"TopRightThumb" => ResizeDirection.TopRight,
+			"BottomLeftThumb" => ResizeDirection.BottomLeft,
+			"BottomRightThumb" => ResizeDirection.BottomRight,
 			_ => ResizeDirection.None,
 		};
 		viewModel.OnThumbDragStarted(BoundingBox, currentDirection);
@@ -51,18 +55,28 @@ public partial class BoundingBoxControl : UserControl
 		switch (currentDirection)
 		{
 			case ResizeDirection.Top:
-				viewModel.OnThumbDragDelta(e.Vector.Y);
+				viewModel.OnThumbDragDelta(0, e.Vector.Y);
 				break;
 			case ResizeDirection.Bottom:
-				viewModel.OnThumbDragDelta(e.Vector.Y);
-
+				viewModel.OnThumbDragDelta(0, e.Vector.Y);
 				break;
 			case ResizeDirection.Left:
-				viewModel.OnThumbDragDelta(e.Vector.X);
+				viewModel.OnThumbDragDelta(e.Vector.X, 0);
 				break;
-
 			case ResizeDirection.Right:
-				viewModel.OnThumbDragDelta(e.Vector.X);
+				viewModel.OnThumbDragDelta(e.Vector.X, 0);
+				break;
+			case ResizeDirection.TopLeft:
+				viewModel.OnThumbDragDelta(e.Vector.X, e.Vector.Y);
+				break;
+			case ResizeDirection.TopRight:
+				viewModel.OnThumbDragDelta(e.Vector.X, e.Vector.Y);
+				break;
+			case ResizeDirection.BottomLeft:
+				viewModel.OnThumbDragDelta(e.Vector.X, e.Vector.Y);
+				break;
+			case ResizeDirection.BottomRight:
+				viewModel.OnThumbDragDelta(e.Vector.X, e.Vector.Y);
 				break;
 
 			default:
