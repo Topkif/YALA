@@ -46,6 +46,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	private BoundingBox? newBoundingBox;
 
 	public DatabaseService databaseService = new();
+	YoloOnnxService yoloOnnxService = new();
 
 	// Force notify collection changed event when CurrentImageBoundingBoxes is changed by subscribing to the new collection
 	private NotifyCollectionChangedEventHandler? _collectionChangedHandler;
@@ -77,6 +78,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		// Load some default values to test
 		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+		ImagesPaths.Add("../../../Assets/notfound.png");
 		LabellingClasses.Add(new LabellingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 0, IsSelected = true });
 		LabellingClasses.Add(new LabellingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 0, IsSelected = false });
 		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected);
@@ -100,7 +102,6 @@ public partial class MainWindowViewModel : ViewModelBase
 			}
 		}
 		LabellingClasses = databaseService.GetLabellingClasses();
-		//databaseService.UpdateNumberOfInstances(LabellingClasses);
 		ProjectName = $"YALA ({dbPath})";
 	}
 
@@ -122,22 +123,30 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 	public void OpenExistingProject(string dbPath)
 	{
-		databaseService.Close();
-		if (!databaseService.DoTablesExist(dbPath))
+		try
 		{
-			databaseService.CreateYalaTables(dbPath);
+
+			databaseService.Close();
+			if (!databaseService.DoTablesExist(dbPath))
+			{
+				databaseService.CreateYalaTables(dbPath);
+			}
+			LabellingClasses = databaseService.GetLabellingClasses();
+			selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected == true);
+			ImagesPaths = databaseService.GetImagesPaths();
+			CurrentImageIndex = 1;
+			if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
+			{
+				CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+				CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+			}
+			ProjectName = $"YALA ({dbPath})";
 		}
-		LabellingClasses = databaseService.GetLabellingClasses();
-		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected == true);
-		ImagesPaths = databaseService.GetImagesPaths();
-		CurrentImageIndex = 1;
-		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
+		catch
 		{
-			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
-			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+			ProjectName = $"Error loading project";
 		}
-		ProjectName = $"YALA ({dbPath})";
 	}
 
 	[RelayCommand]
@@ -526,4 +535,67 @@ public partial class MainWindowViewModel : ViewModelBase
 		ProjectSplitter.SplitProject(databaseService, splitImagesQuantities, randomize, newBasePath);
 	}
 
+	public void YoloModelPathSelected(string modelPath)
+	{
+		yoloOnnxService.LoadOnnxModel(modelPath);
+	}
+
+	public void RunYoloOnProject()
+	{
+		if (ImagesPaths.Count > 0)
+		{
+			foreach (var imagePath in ImagesPaths)
+			{
+				string absolutePath = System.IO.Path.Join(databaseService.absolutePath, imagePath);
+				List<Detection> detections = yoloOnnxService.Detect(absolutePath);
+				if (detections.Count > 0)
+				{
+					List<BoundingBox> boundingBoxes = detections.Select(detection => new BoundingBox
+					{
+						Tlx = detection.xCenter - detection.width / 2,
+						Tly = detection.yCenter - detection.height / 2,
+						Width = detection.width,
+						Height = detection.height,
+						ClassId = detection.classId,
+						ClassName = detection.label,
+						Color = LabellingClasses.FirstOrDefault(x => x.Name == detection.label)?.Color ?? "#ffffff",
+						EditingEnabled = ResizingBoundingBoxEnabled
+					}).ToList();
+					databaseService.AddBoundingBoxListSafe(boundingBoxes, imagePath);
+				}
+			}
+			LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
+		}
+	}
+
+	[RelayCommand]
+	private void DetectCurrentImage()
+	{
+		if (ImagesPaths.Count > 0)
+		{
+			string currentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
+			List<Detection> detections = yoloOnnxService.Detect(currentImageAbsolutePath);
+			if (detections.Count > 0)
+			{
+				// Clear existing bounding boxes
+				CurrentImageBoundingBoxes.Clear();
+				// Add new bounding boxes based on detections
+				foreach (var detection in detections)
+				{
+					var bbox = new BoundingBox
+					{
+						Tlx = detection.xCenter - detection.width / 2,
+						Tly = detection.yCenter - detection.height / 2,
+						Width = detection.width,
+						Height = detection.height,
+						ClassId = detection.classId,
+						ClassName = detection.label,
+						Color = LabellingClasses.FirstOrDefault(x => x.Name == detection.label)?.Color ?? "#ffffff",
+						EditingEnabled = ResizingBoundingBoxEnabled
+					};
+					CurrentImageBoundingBoxes.Add(bbox);
+				}
+			}
+		}
+	}
 }

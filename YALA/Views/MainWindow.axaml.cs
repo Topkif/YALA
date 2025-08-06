@@ -155,6 +155,30 @@ public partial class MainWindow : Window
 			viewModel.OpenExistingProject(path);
 		}
 	}
+
+	private async void OnLoadYoloModelClicked(object sender, RoutedEventArgs e)
+	{
+		var topLevel = GetTopLevel(this);
+		if (topLevel == null)
+			return;
+
+		var file = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+		{
+			Title = "Select YOLO ONNX model (v8+)",
+			AllowMultiple = false,
+			FileTypeFilter = new[]
+			{
+			new FilePickerFileType("ONNX") { Patterns = new[] { "*.onnx" } }
+		}
+		});
+
+		if (file?.Count > 0)
+		{
+			string path = file[0].Path.LocalPath;
+			viewModel.YoloModelPathSelected(path);
+		}
+	}
+
 	private async void OnExportClassesClicked(object sender, RoutedEventArgs e)
 	{
 		var topLevel = GetTopLevel(this);
@@ -396,6 +420,17 @@ public partial class MainWindow : Window
 		if (result is bool confirmed && confirmed)
 		{
 			viewModel.RemoveCurrentImageFromProject();
+		}
+	}
+	private async void RunYoloOnProjectClicked(object? sender, RoutedEventArgs e)
+	{
+		string message = $"Are you sure you want to run the selected Yolo on all images in project?\nThis will not remove existing detections.";
+		var dialog = new ConfirmDialog(message);
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is bool confirmed && confirmed)
+		{
+			viewModel.RunYoloOnProject();
 		}
 	}
 

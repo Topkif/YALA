@@ -51,8 +51,8 @@
 							<MenuItem Header="Export project for YOLO" Click="OnExportProjectYoloClicked" />
 						</MenuItem>
 						<MenuItem Header="Inference">
-							<MenuItem Header="Open YOLO .pt"/>
-							<MenuItem Header="Run on all project"/>
+							<MenuItem Header="Load YOLO model" Click="OnLoadYoloModelClicked"/>
+							<MenuItem Header="Run on project" Click="RunYoloOnProjectClicked"/>
 						</MenuItem>
 						<MenuItem Header="Edit">
 							<MenuItem Header="Copy"/>
@@ -65,7 +65,7 @@
 						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Next Image" Tag="25" Content="ChevronRight" Command="{Binding NextImageCommand}"/>
 						<ToggleButton Classes="icon-button" Focusable="False" ToolTip.Tip="Draw Bounding Boxes" Content="SquarePen" IsChecked="{Binding DrawingBoundingBoxEnabled}"/>
 						<ToggleButton Classes="icon-button" Focusable="False" ToolTip.Tip="Rescale Bounding Boxes" Content="Scaling" IsChecked="{Binding ResizingBoundingBoxEnabled}" Command="{Binding ToggleSwitchCheckedCommand}"/>
-						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles"/>
+						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Auto Detect This Image" Content="WandSparkles" Command="{Binding DetectCurrentImageCommand}"/>
 						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Reset Pan And Zoom" Content="Fullscreen" Click="ZoomExtentsCanva"/>
 						<Button Classes="icon-button" Focusable="False" ToolTip.Tip="Remove Current Image From Project" Content="Trash2" Click="RemoveCurrentImageFromProjectClicked" Tag="{Binding}" />
 					</StackPanel>
