@@ -276,8 +276,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public void OnThumbDragDelta(double xDelta, double yDelta)
 	{
-		double delta = xDelta+yDelta; // No need to do pythagoran theorem as we only resize in one direction at a time
-
 		double maxWidth = CurrentImageBitmap.Size.Width;
 		double maxHeight = CurrentImageBitmap.Size.Height;
 
@@ -289,57 +287,118 @@ public partial class MainWindowViewModel : ViewModelBase
 					newTly = Math.Max(0, newTly);
 					double newHeight = resizingBoundingBox.Tly + resizingBoundingBox.Height - newTly;
 					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - newTly));
-
-					resizingBoundingBox.Tly = newTly;
-					resizingBoundingBox.Height = newHeight;
+					if (newHeight > 1)
+					{
+						resizingBoundingBox.Tly = newTly;
+						resizingBoundingBox.Height = newHeight;
+					}
 					break;
 				}
 			case ResizeDirection.Bottom:
 				{
-					double newHeight = resizingBoundingBox.Height + delta;
+					double newHeight = resizingBoundingBox.Height + yDelta;
 					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - resizingBoundingBox.Tly));
 					resizingBoundingBox.Height = newHeight;
 					break;
 				}
 			case ResizeDirection.Left:
 				{
-					double newTlx = resizingBoundingBox.Tlx + delta;
-					newTlx = Math.Max(0, newTlx);
-					double newWidth = resizingBoundingBox.Tlx + resizingBoundingBox.Width - newTlx;
-					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - newTlx));
-
-					resizingBoundingBox.Tlx = newTlx;
-					resizingBoundingBox.Width = newWidth;
-					break;
-				}
-			case ResizeDirection.Right:
-				{
-					double newWidth = resizingBoundingBox.Width + delta;
-					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - resizingBoundingBox.Tlx));
-					resizingBoundingBox.Width = newWidth;
-					break;
-				}
-
-			case ResizeDirection.TopLeft:
-				{
-					// Top
-					double newTly = resizingBoundingBox.Tly + yDelta;
-					newTly = Math.Max(0, newTly);
-					double newHeight = resizingBoundingBox.Tly + resizingBoundingBox.Height - newTly;
-					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - newTly));
-					resizingBoundingBox.Tly = newTly;
-					resizingBoundingBox.Height = newHeight;
-
-					// Left
 					double newTlx = resizingBoundingBox.Tlx + xDelta;
 					newTlx = Math.Max(0, newTlx);
 					double newWidth = resizingBoundingBox.Tlx + resizingBoundingBox.Width - newTlx;
 					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - newTlx));
-					resizingBoundingBox.Tlx = newTlx;
-					resizingBoundingBox.Width = newWidth;
+					if (newWidth > 1)
+					{
+						resizingBoundingBox.Tlx = newTlx;
+						resizingBoundingBox.Width = newWidth;
+					}
+					break;
 				}
-				break;
+			case ResizeDirection.Right:
+				{
+					double newWidth = resizingBoundingBox.Width + xDelta;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - resizingBoundingBox.Tlx));
+					resizingBoundingBox.Width = newWidth;
+					break;
+				}
+			case ResizeDirection.TopLeft:
+				{
+					// Handle Y (Top)
+					double newTly = resizingBoundingBox.Tly + yDelta;
+					newTly = Math.Max(0, newTly);
+					double newHeight = resizingBoundingBox.Tly + resizingBoundingBox.Height - newTly;
+					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - newTly));
+					if (newHeight > 1)
+					{
+						resizingBoundingBox.Tly = newTly;
+						resizingBoundingBox.Height = newHeight;
+					}
 
+					// Handle X (Left)
+					double newTlx = resizingBoundingBox.Tlx + xDelta;
+					newTlx = Math.Max(0, newTlx);
+					double newWidth = resizingBoundingBox.Tlx + resizingBoundingBox.Width - newTlx;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - newTlx));
+					if (newWidth > 1)
+					{
+						resizingBoundingBox.Tlx = newTlx;
+						resizingBoundingBox.Width = newWidth;
+					}
+					break;
+				}
+			case ResizeDirection.TopRight:
+				{
+					// Handle Y (Top)
+					double newTly = resizingBoundingBox.Tly + yDelta;
+					newTly = Math.Max(0, newTly);
+					double newHeight = resizingBoundingBox.Tly + resizingBoundingBox.Height - newTly;
+					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - newTly));
+					if (newHeight > 1)
+					{
+						resizingBoundingBox.Tly = newTly;
+						resizingBoundingBox.Height = newHeight;
+					}
+
+					// Handle X (Right)
+					double newWidth = resizingBoundingBox.Width + xDelta;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - resizingBoundingBox.Tlx));
+					resizingBoundingBox.Width = newWidth;
+
+					break;
+				}
+			case ResizeDirection.BottomLeft:
+				{
+					// Handle Y (Bottom)
+					double newHeight = resizingBoundingBox.Height + yDelta;
+					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - resizingBoundingBox.Tly));
+					resizingBoundingBox.Height = newHeight;
+
+					// Handle X (Left)
+					double newTlx = resizingBoundingBox.Tlx + xDelta;
+					newTlx = Math.Max(0, newTlx);
+					double newWidth = resizingBoundingBox.Tlx + resizingBoundingBox.Width - newTlx;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - newTlx));
+					if (newWidth > 1)
+					{
+						resizingBoundingBox.Tlx = newTlx;
+						resizingBoundingBox.Width = newWidth;
+					}
+					break;
+				}
+			case ResizeDirection.BottomRight:
+				{
+					// Handle Y (Bottom)
+					double newHeight = resizingBoundingBox.Height + yDelta;
+					newHeight = Math.Max(1, Math.Min(newHeight, maxHeight - resizingBoundingBox.Tly));
+					resizingBoundingBox.Height = newHeight;
+
+					// Handle X (Right)
+					double newWidth = resizingBoundingBox.Width + xDelta;
+					newWidth = Math.Max(1, Math.Min(newWidth, maxWidth - resizingBoundingBox.Tlx));
+					resizingBoundingBox.Width = newWidth;
+
+					break;
+				}
 		}
 	}
 

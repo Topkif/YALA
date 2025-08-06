@@ -8,7 +8,7 @@
 		<conv:HexToBrushConverter x:Key="HexToBrushConverter" />
 		<conv:BoolToIsVisibleConverter x:Key="BoolToIsVisibleConverter" />
 		<conv:SelectedToFillBrushConverter x:Key="SelectedToFillBrushConverter" />
-		<!--<conv:MarginPositionConverter x:Key="MarginPositionConverter" />-->
+		<conv:SpaceAdderConverter x:Key="SpaceAdderConverter" />
 
 		<ControlTemplate x:Key="ThumbTemplate" TargetType="Thumb">
 			<Border Background="{TemplateBinding Background}"
@@ -81,7 +81,7 @@
                        Cursor="SizeWestEast"
                        Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
                        Height="{Binding BoundingBox.Height, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-                       Background="Transparent" BorderBrush="Blue" BorderThickness="2"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                        HorizontalAlignment="Right" VerticalAlignment="Center"
                        Template="{StaticResource ThumbTemplate}"
                        DragStarted="OnThumbDragStarted"
@@ -94,7 +94,7 @@
                        Cursor="TopLeftCorner"
                        Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
                        Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-                       Background="Transparent" BorderBrush="Red" BorderThickness="2"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                        HorizontalAlignment="Left" VerticalAlignment="Top"
                        Template="{StaticResource ThumbTemplate}"
                        DragStarted="OnThumbDragStarted"
@@ -107,7 +107,7 @@
                        Cursor="TopRightCorner"
                        Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
                        Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-                       Background="Transparent" BorderBrush="Red" BorderThickness="2"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                        HorizontalAlignment="Right" VerticalAlignment="Top"
                        Template="{StaticResource ThumbTemplate}"
                        DragStarted="OnThumbDragStarted"
@@ -120,7 +120,7 @@
                        Cursor="BottomLeftCorner"
                        Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
                        Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-                       Background="Transparent" BorderBrush="Red" BorderThickness="2"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                        HorizontalAlignment="Left" VerticalAlignment="Bottom"
                        Template="{StaticResource ThumbTemplate}"
                        DragStarted="OnThumbDragStarted"
@@ -133,7 +133,7 @@
                        Cursor="BottomRightCorner"
                        Width="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
                        Height="{Binding RealBoundingBoxThumbSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
-                       Background="Transparent" BorderBrush="Red" BorderThickness="2"
+                       Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
                        Template="{StaticResource ThumbTemplate}"
                        DragStarted="OnThumbDragStarted"
@@ -148,8 +148,7 @@
 
 		<!-- Class label floating above -->
 		<TextBlock
-            Text="{Binding BoundingBox.ClassName, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
-            Foreground="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
+            Text="{Binding BoundingBox.ClassName, Converter={StaticResource SpaceAdderConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"            Foreground="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
             FontWeight="Bold"
             FontSize="{Binding RealClassNameSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}"
             IsHitTestVisible="False"

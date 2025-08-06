@@ -26,6 +26,7 @@ namespace YALA
                 DisableAvaloniaDataAnnotationValidation();
                 desktop.MainWindow = new MainWindow
                 {
+                    WindowState = Avalonia.Controls.WindowState.Maximized,
                     DataContext = MainVM,
                 };
             }
