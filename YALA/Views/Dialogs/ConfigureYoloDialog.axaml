@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="YALA.Views.ConfigureYoloDialog">
+
+	<StackPanel Margin="8">
+		<!-- Path Selection -->
+		<StackPanel Margin="0,0,0,20">
+			<TextBlock Text="YOLO ONNX Path:" FontWeight="Bold" Margin="0,0,0,8"/>
+			<StackPanel Orientation="Horizontal">
+				<TextBox x:Name="FilePathTextBox" Margin="0,0,8,0" Width="260" IsReadOnly="True" />
+				<Button Content="Browse..." Click="OnBrowseClicked" />
+			</StackPanel>
+		</StackPanel>
+		
+		<TextBlock x:Name="IouTextBlock" Text="IoU Threshold:"/>
+		<Slider x:Name="NmsSlider" Minimum="0.1" Maximum="1.0" TickFrequency="0.01" IsSnapToTickEnabled="True" ValueChanged="IouSlider_ValueChanged"/>
+
+		<TextBlock x:Name="ConfidenceTextBlock" Text="Confidence Threshold:" Margin="0,10,0,0"/>
+		<Slider x:Name="ConfSlider" Minimum="0.1" Maximum="1.0" TickFrequency="0.01" IsSnapToTickEnabled="True" ValueChanged="ConfSlider_ValueChanged"/>
+
+		
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" Spacing="10">
+			<Button Content="Cancel" Click="OnCancelClick"/>
+			<Button Content="OK" Click="OnOkClick"/>
+		</StackPanel>
+	</StackPanel>
+</UserControl>

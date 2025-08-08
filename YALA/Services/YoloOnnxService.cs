@@ -17,8 +17,11 @@ public class YoloOnnxService
 	int inputWidth;
 	int inputHeight;
 	string? inputName;
+	public double iouThreshold;
+	public double confThreshold;
+	public string modelPath;
 
-	public void LoadOnnxModel(string modelPath)
+	public void LoadOnnxModel(string modelPath, double iouThreshold, double confThreshold)
 	{
 		inferenceSession?.Dispose();
 
@@ -63,9 +66,12 @@ public class YoloOnnxService
 				inputHeight = h;
 			}
 		}
+		this.modelPath = modelPath;
+		this.iouThreshold = iouThreshold;
+		this.confThreshold = confThreshold;
 	}
 
-	public List<Detection> Detect(string imagePath, double iouThreshold = 0.45, double confThreshold = 0.25)
+	public List<Detection> Detect(string imagePath)
 	{
 		try
 		{
@@ -99,7 +105,7 @@ public class YoloOnnxService
 			using var results = inferenceSession!.Run(inputs);
 			var outputTensor = results.First().AsTensor<float>();
 
-			return Postprocess(outputTensor, imageWidth, imageHeight, iouThreshold,confThreshold);
+			return Postprocess(outputTensor, imageWidth, imageHeight);
 		}
 		catch
 		{
@@ -107,9 +113,11 @@ public class YoloOnnxService
 		}
 	}
 
-	private List<Detection> Postprocess(Tensor<float> output, int imageWidth, int imageHeight, double iouThreshold, double confThreshold)
+	private List<Detection> Postprocess(Tensor<float> output, int imageWidth, int imageHeight)
 	{
 		// Postprocessing: parse output and apply NMS
+		float invInputWidth = 1.0f / inputWidth;
+		float invInputHeight = 1.0f / inputHeight;
 		var detections = new List<Detection>();
 		if (labels == null) return detections;
 
@@ -127,10 +135,10 @@ public class YoloOnnxService
 
 				var det = new Detection
 				{
-					xCenter = output[0, 0, detIdx] / inputWidth * imageWidth,
-					yCenter = output[0, 1, detIdx] / inputHeight * imageHeight,
-					width = output[0, 2, detIdx] / inputWidth * imageWidth,
-					height = output[0, 3, detIdx] / inputHeight * imageHeight,
+					xCenter = output[0, 0, detIdx] * invInputWidth * imageWidth,
+					yCenter = output[0, 1, detIdx] * invInputHeight * imageHeight,
+					width = output[0, 2, detIdx] * invInputWidth * imageWidth,
+					height = output[0, 3, detIdx] * invInputHeight * imageHeight,
 					confidence = conf,
 					classId = classId,
 					label = labels[classId]

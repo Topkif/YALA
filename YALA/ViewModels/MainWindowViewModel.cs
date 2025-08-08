@@ -47,7 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	private BoundingBox? newBoundingBox;
 
 	public DatabaseService databaseService = new();
-	YoloOnnxService yoloOnnxService = new();
+	public YoloOnnxService yoloOnnxService = new();
 
 	// Force notify collection changed event when CurrentImageBoundingBoxes is changed by subscribing to the new collection
 	private NotifyCollectionChangedEventHandler? _collectionChangedHandler;
@@ -615,9 +615,9 @@ public partial class MainWindowViewModel : ViewModelBase
 		ProjectSplitter.SplitProject(databaseService, splitImagesQuantities, randomize, newBasePath);
 	}
 
-	public void YoloModelPathSelected(string modelPath)
+	public void YoloModelPathSelected(string modelPath, double iouThreshold, double confThreshold)
 	{
-		yoloOnnxService.LoadOnnxModel(modelPath);
+		yoloOnnxService.LoadOnnxModel(modelPath, iouThreshold, confThreshold);
 	}
 
 	public void RemoveAllAnnotations()
@@ -626,15 +626,15 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageBoundingBoxes.Clear();
 	}
 
-	public async Task RunYoloOnProjectAsync(IProgress<(double percent, bool done)> progress, double nms, double conf, CancellationToken token)
+	public void RunYoloOnProject(IProgress<(double percent, bool done)> progress, CancellationToken token)
 	{
 		int total = ImagesPaths.Count;
 		for (int i = 0; i < total; i++)
 		{
 			if (token.IsCancellationRequested)
-				return; 
+				return;
 			string absolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[i]);
-			List<Detection> detections = yoloOnnxService.Detect(absolutePath, nms, conf);
+			List<Detection> detections = yoloOnnxService.Detect(absolutePath);
 			if (detections.Count > 0)
 			{
 				var boundingBoxes = detections.Select(detection => new BoundingBox
@@ -661,11 +661,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		progress.Report((100, true));
 	}
 
-
-
-
-	[RelayCommand]
-	private void DetectCurrentImage()
+	public void RunYoloOnImage()
 	{
 		if (ImagesPaths.Count > 0)
 		{

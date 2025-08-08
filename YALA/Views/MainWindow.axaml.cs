@@ -49,6 +49,7 @@ public partial class MainWindow : Window
 	public double MinusRealBoundingBoxMargin => -(RealBoundingBoxThumbSize - RealBoundingBoxStrokeSize)/ 2;
 	public double RealClassNameSize => classNameSize / ZoomBorder.ZoomX;
 	public Thickness RealClassNameMargin => new(classNameMargin / ZoomBorder.ZoomX);
+	private CancellationTokenSource? yoloCancellationToken;
 
 
 	private readonly MainWindowViewModel viewModel = App.MainVM;
@@ -162,24 +163,20 @@ public partial class MainWindow : Window
 
 	private async void OnLoadYoloModelClicked(object sender, RoutedEventArgs e)
 	{
-		var topLevel = GetTopLevel(this);
-		if (topLevel == null)
-			return;
-
-		var file = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+		if (viewModel.yoloOnnxService.modelPath != null) // If the model is not yet initialised
 		{
-			Title = "Select YOLO ONNX model (v8+)",
-			AllowMultiple = false,
-			FileTypeFilter = new[]
+			var yoloDialog = new ConfigureYoloDialog(
+				viewModel.yoloOnnxService.modelPath,
+				viewModel.yoloOnnxService.iouThreshold,
+				viewModel.yoloOnnxService.confThreshold);
+			var yoloResult = await DialogHost.Show(yoloDialog, "RootDialog");
+			if (yoloResult is ConfigureYoloDialog yoloConfig)
 			{
-			new FilePickerFileType("ONNX") { Patterns = new[] { "*.onnx" } }
-		}
-		});
-
-		if (file?.Count > 0)
-		{
-			string path = file[0].Path.LocalPath;
-			viewModel.YoloModelPathSelected(path);
+				viewModel.yoloOnnxService.LoadOnnxModel(
+					yoloConfig.IncomingPath,
+					yoloConfig.IouThreshold,
+					yoloConfig.ConfidenceThreshold);
+			}
 		}
 	}
 
@@ -427,21 +424,47 @@ public partial class MainWindow : Window
 		}
 	}
 
-	private CancellationTokenSource? _cts;
+	private async void RunYoloOnImageClicked(object? sender, RoutedEventArgs e)
+	{
+		if (viewModel.yoloOnnxService.modelPath == null) // If the model is not yet initialised
+		{
+			var yoloDialog = new ConfigureYoloDialog("", 0.45, 0.25);
+			var yoloResult = await DialogHost.Show(yoloDialog, "RootDialog");
+			if (yoloResult is ConfigureYoloDialog yoloConfig)
+			{
+				viewModel.yoloOnnxService.LoadOnnxModel(
+					yoloConfig.IncomingPath,
+					yoloConfig.IouThreshold,
+					yoloConfig.ConfidenceThreshold);
+			}
+		}
+		viewModel.RunYoloOnImage();
+	}
 	private async void RunYoloOnProjectClicked(object? sender, RoutedEventArgs e)
 	{
-		_cts = new CancellationTokenSource();
-		var dialog = new RunYoloProjectDialog();
-		var result = await DialogHost.Show(dialog, "RootDialog");
-
-		if (result is RunYoloProjectDialog runYoloProjectDialog)
+		if (viewModel.yoloOnnxService.modelPath == null) // If the model is not yet initialised
 		{
-			await RunYoloWithProgressAsync(
-				runYoloProjectDialog.NmsThreshold,
-				runYoloProjectDialog.ConfidenceThreshold);
+			var yoloDialog = new ConfigureYoloDialog("", 0.45, 0.25);
+			var yoloResult = await DialogHost.Show(yoloDialog, "RootDialog");
+			if (yoloResult is ConfigureYoloDialog yoloConfig)
+			{
+				viewModel.yoloOnnxService.LoadOnnxModel(
+					yoloConfig.IncomingPath,
+					yoloConfig.IouThreshold,
+					yoloConfig.ConfidenceThreshold);
+			}
+		}
+
+		yoloCancellationToken = new CancellationTokenSource();
+		var confirmDialog = new ConfirmDialog("Are you sure you want to run and merge the current YOLO model on all images?");
+		var result = await DialogHost.Show(confirmDialog, "RootDialog");
+
+		if (result is bool confirmed && confirmed)
+		{
+			await RunYoloWithProgressAsync();
 		}
 	}
-	private async Task RunYoloWithProgressAsync(double nms, double conf)
+	private async Task RunYoloWithProgressAsync()
 	{
 		var progressDialog = new ProgressBarDialog();
 		var progress = new Progress<(double percent, bool done)>(value =>
@@ -450,9 +473,9 @@ public partial class MainWindow : Window
 			if (value.done)
 				DialogHost.Close("RootDialog", null);
 		});
-		progressDialog.CancelRequested += () => _cts?.Cancel();
+		progressDialog.CancelRequested += () => yoloCancellationToken?.Cancel();
 
-		var workTask = Task.Run(() => viewModel.RunYoloOnProjectAsync(progress, nms, conf, _cts.Token)); 
+		var workTask = Task.Run(() => viewModel.RunYoloOnProject(progress, yoloCancellationToken.Token));
 		await DialogHost.Show(progressDialog, "RootDialog");
 		await workTask;
 	}
