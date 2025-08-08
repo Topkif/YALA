@@ -14,7 +14,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Tmds.DBus.Protocol;
 using YALA.Converters;
 using YALA.Models;
 using YALA.ViewModels;
@@ -422,17 +426,37 @@ public partial class MainWindow : Window
 			viewModel.RemoveCurrentImageFromProject();
 		}
 	}
+
+	private CancellationTokenSource? _cts;
 	private async void RunYoloOnProjectClicked(object? sender, RoutedEventArgs e)
 	{
-		string message = $"Are you sure you want to run the selected Yolo on all images in project?\nThis will not remove existing detections.";
-		var dialog = new ConfirmDialog(message);
+		_cts = new CancellationTokenSource();
+		var dialog = new RunYoloProjectDialog();
 		var result = await DialogHost.Show(dialog, "RootDialog");
 
-		if (result is bool confirmed && confirmed)
+		if (result is RunYoloProjectDialog runYoloProjectDialog)
 		{
-			viewModel.RunYoloOnProject();
+			await RunYoloWithProgressAsync(
+				runYoloProjectDialog.NmsThreshold,
+				runYoloProjectDialog.ConfidenceThreshold);
 		}
 	}
+	private async Task RunYoloWithProgressAsync(double nms, double conf)
+	{
+		var progressDialog = new ProgressBarDialog();
+		var progress = new Progress<(double percent, bool done)>(value =>
+		{
+			progressDialog.SetProgress(value.percent);
+			if (value.done)
+				DialogHost.Close("RootDialog", null);
+		});
+		progressDialog.CancelRequested += () => _cts?.Cancel();
+
+		var workTask = Task.Run(() => viewModel.RunYoloOnProjectAsync(progress, nms, conf, _cts.Token)); 
+		await DialogHost.Show(progressDialog, "RootDialog");
+		await workTask;
+	}
+
 
 	private void ZoomExtentsCanva(object? sender, RoutedEventArgs e)
 	{
@@ -474,7 +498,7 @@ public partial class MainWindow : Window
 				mpd.KeepCurrentRadioButton.IsChecked == true ? true : false);
 		}
 	}
-	
+
 	private async void OnProjectSplitClicked(object? sender, RoutedEventArgs e)
 	{
 		if (viewModel?.databaseService?.connection?.State == System.Data.ConnectionState.Closed)
@@ -489,5 +513,18 @@ public partial class MainWindow : Window
 				spd.RandomizeCheckBox.IsChecked == true,
 				spd.fileNameWithoutExt);
 		}
+	}
+
+	private async void OnRemoveAllAnnotationsClicked(object? sender, RoutedEventArgs e)
+	{
+		string message = $"Are you sure you want to remove all annotations on all images in the project?\nThis action is unreversible";
+		var dialog = new ConfirmDialog(message);
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is bool confirmed && confirmed)
+		{
+			viewModel.RemoveAllAnnotations();
+		}
+
 	}
 }

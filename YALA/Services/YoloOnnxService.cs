@@ -6,9 +6,6 @@ using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using YALA.Models;
 
 namespace YALA.Services;
@@ -19,23 +16,30 @@ public class YoloOnnxService
 	string[]? labels;
 	int inputWidth;
 	int inputHeight;
-	float iouThreshold = 0.45f; // Intersection over Union threshold for NMS
-	float confThreshold = 0.25f; // Confidence threshold for detections
+	string? inputName;
+
 	public void LoadOnnxModel(string modelPath)
 	{
 		inferenceSession?.Dispose();
-		inferenceSession = new InferenceSession(modelPath);
+
+		var opts = new SessionOptions
+		{
+			GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
+			IntraOpNumThreads = Environment.ProcessorCount,
+			InterOpNumThreads = 1
+		};
+
+		inferenceSession = new InferenceSession(modelPath, opts);
+		inputName = inferenceSession.InputMetadata.Keys.FirstOrDefault();
+
 		ModelMetadata metadata = inferenceSession.ModelMetadata;
 
-		// Parse 'names' metadata
 		if (metadata.CustomMetadataMap.TryGetValue("names", out var namesRaw))
 		{
-			// Convert to valid JSON
 			namesRaw = namesRaw.Replace("'", "\"").Trim();
-			namesRaw = namesRaw.Substring(1, namesRaw.Length - 2); // remove { and }
+			namesRaw = namesRaw.Substring(1, namesRaw.Length - 2);
 			var items = namesRaw.Split(", ");
 			var dict = new Dictionary<string, string>();
-
 			foreach (var item in items)
 			{
 				var parts = item.Split(": ", 2);
@@ -49,10 +53,8 @@ public class YoloOnnxService
 			labels = dict.OrderBy(kvp => int.Parse(kvp.Key)).Select(kvp => kvp.Value).ToArray();
 		}
 
-		// Parse 'imgsz' metadata
 		if (metadata.CustomMetadataMap.TryGetValue("imgsz", out var sizeRaw))
 		{
-			// Assumes format is "[640,640]"
 			sizeRaw = sizeRaw.Trim('[', ']');
 			var parts = sizeRaw.Split(',');
 			if (parts.Length == 2 && int.TryParse(parts[0], out var w) && int.TryParse(parts[1], out var h))
@@ -63,38 +65,41 @@ public class YoloOnnxService
 		}
 	}
 
-	public List<Detection> Detect(string imagePath)
+	public List<Detection> Detect(string imagePath, double iouThreshold = 0.45, double confThreshold = 0.25)
 	{
 		try
 		{
-		// Preprocess the image
-		using Image<Rgb24> image = Image.Load<Rgb24>(imagePath);
-		int imageWidth = image.Bounds.Width;
-		int imageHeight = image.Bounds.Height;
-		image.Mutate(x => x.Resize(inputWidth, inputHeight)); // Resize to model input size
-		Tensor<float> inputTensor = new DenseTensor<float>(new[] { 1, 3, inputWidth, inputHeight }); // Create tensor with shape [1, 3, inputSize, inputSize]
+			using Image<Rgb24> image = Image.Load<Rgb24>(imagePath);
+			int imageWidth = image.Width;
+			int imageHeight = image.Height;
 
-		for (int y = 0; y < inputHeight; y++)
-		{
-			for (int x = 0; x < inputWidth; x++)
-			{
-				Rgb24 pixel = image[x, y];
-				inputTensor[0, 0, y, x] = pixel.R / 255f;
-				inputTensor[0, 1, y, x] = pixel.G / 255f;
-				inputTensor[0, 2, y, x] = pixel.B / 255f;
-			}
-		}
+			// Preprocessing: Resize to model input size
+			image.Mutate(x => x.Resize(inputWidth, inputHeight));
 
-			List<NamedOnnxValue> inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("images", inputTensor) };
-			Tensor<float>? output = inferenceSession?.Run(inputs)?.First().AsTensor<float>();
-			if (output != null)
+			// Flatten image to CHW float array normalized to [0,1]
+			float[] inputData = new float[1 * 3 * inputHeight * inputWidth];
+			int hw = inputHeight * inputWidth;
+
+			for (int y = 0; y < inputHeight; y++)
 			{
-				return Postprocess(output, imageWidth, imageHeight);
+				for (int x = 0; x < inputWidth; x++)
+				{
+					var p = image[x, y];
+					int idx = y * inputWidth + x;
+					inputData[idx] = p.R / 255f;
+					inputData[hw + idx] = p.G / 255f;
+					inputData[2 * hw + idx] = p.B / 255f;
+				}
 			}
-			else
-			{
-				return new List<Detection>();
-			}
+
+			var inputTensor = new DenseTensor<float>(inputData, new[] { 1, 3, inputHeight, inputWidth });
+			var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor(inputName!, inputTensor) };
+
+			// Inference
+			using var results = inferenceSession!.Run(inputs);
+			var outputTensor = results.First().AsTensor<float>();
+
+			return Postprocess(outputTensor, imageWidth, imageHeight, iouThreshold,confThreshold);
 		}
 		catch
 		{
@@ -102,71 +107,60 @@ public class YoloOnnxService
 		}
 	}
 
-	private List<Detection> Postprocess(Tensor<float> output, int imageWidth, int imageHeight)
+	private List<Detection> Postprocess(Tensor<float> output, int imageWidth, int imageHeight, double iouThreshold, double confThreshold)
 	{
-		// [1, (4 + N), 8400] = [batch, (xc yc w h) + Classes confidence, detections]
-		List<Detection> detections = new();
-		if (labels != null)
+		// Postprocessing: parse output and apply NMS
+		var detections = new List<Detection>();
+		if (labels == null) return detections;
+
+		int numDetections = output.Dimensions[2];
+		int numClasses = labels.Length;
+
+		for (int classId = 0; classId < numClasses; classId++)
 		{
-			// For each class
-			for (int i = 0; i< labels.Length; i++)
+			var classDetections = new List<Detection>();
+
+			for (int detIdx = 0; detIdx < numDetections; detIdx++)
 			{
-				List<Detection> classDetections = new();
-				// For each detection
-				for (int j = 0; j < output.Dimensions[2]; j++)
+				float conf = output[0, 4 + classId, detIdx];
+				if (conf < confThreshold) continue;
+
+				var det = new Detection
 				{
-					// We consider the detection if it is above the confidence threshold
-					if (output[0, 4 + i, j] >= confThreshold)
+					xCenter = output[0, 0, detIdx] / inputWidth * imageWidth,
+					yCenter = output[0, 1, detIdx] / inputHeight * imageHeight,
+					width = output[0, 2, detIdx] / inputWidth * imageWidth,
+					height = output[0, 3, detIdx] / inputHeight * imageHeight,
+					confidence = conf,
+					classId = classId,
+					label = labels[classId]
+				};
+
+				bool shouldAdd = true;
+				var toRemove = new List<int>();
+
+				for (int i = 0; i < classDetections.Count; i++)
+				{
+					float iou = classDetections[i].CalculateIoU(det);
+					if (iou >= iouThreshold)
 					{
-						Detection newDetection = new Detection
+						if (det.confidence > classDetections[i].confidence)
+							toRemove.Add(i);
+						else
 						{
-							xCenter = output[0, 0, j] / inputWidth * imageWidth,
-							yCenter = output[0, 1, j] / inputHeight * imageHeight,
-							width = output[0, 2, j] / inputWidth * imageWidth,
-							height = output[0, 3, j] / inputHeight * imageHeight,
-							confidence = output[0, 4 + i, j],
-							classId = i,
-							label = labels[i]
-						};
-
-						// If the NMS threshold is not exceeded for every other classDetection members
-						bool shouldAdd = true;
-						List<int> toRemove = new();
-						for (int k = 0; k < classDetections.Count; k++)
-						{
-							var existing = classDetections[k];
-							float iou = existing.CalculateIoU(newDetection);
-							if (iou >= iouThreshold) // Same detection
-							{
-								if (newDetection.confidence > existing.confidence)
-								{
-									toRemove.Add(k);
-								}
-								else
-								{
-									shouldAdd = false;
-									break;
-								}
-							}
-						}
-
-						foreach (int idx in toRemove.OrderByDescending(i => i))
-						{
-							classDetections.RemoveAt(idx); 
-						}
-						if (shouldAdd)
-						{
-							classDetections.Add(newDetection);
-						}
-						if (classDetections.Count == 0) // For the first detection of this class
-						{
-							classDetections.Add(newDetection); // If no detections, we add the new one
+							shouldAdd = false;
+							break;
 						}
 					}
 				}
-				detections.AddRange(classDetections);
+
+				foreach (var idx in toRemove.OrderByDescending(i => i)) classDetections.RemoveAt(idx);
+
+				if (shouldAdd) classDetections.Add(det);
 			}
+			detections.AddRange(classDetections);
 		}
-		return detections.Take(Math.Min(detections.Count,10)).ToList();
+
+		return detections;
 	}
 }

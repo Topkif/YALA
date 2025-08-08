@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="YALA.Views.RunYoloProjectDialog">
+
+	<StackPanel Margin="8">
+		<TextBlock Text="NMS Threshold:"/>
+		<TextBox x:Name="NmsTextBox" Text="0.45" />
+
+		<TextBlock Text="Confidence Threshold:" Margin="0,10,0,0"/>
+		<TextBox x:Name="ConfTextBox" Text="0.25" />
+
+		<Label Content="Are you sure you want to merge all current annotations with new YOLO detections for all project images?" Margin="0,10,0,0"/>
+		
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" Spacing="10">
+			<Button Content="Cancel" Click="OnCancelClick"/>
+			<Button Content="OK" Click="OnOkClick" Background="Red"/>
+		</StackPanel>
+	</StackPanel>
+</UserControl>

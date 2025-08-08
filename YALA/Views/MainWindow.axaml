@@ -46,6 +46,7 @@
 							<MenuItem Header="Add images" Click="OnAddImagesClicked" />
 							<MenuItem Header="Merge with project" Click="OnProjectMergeClicked" />
 							<MenuItem Header="Split into projects" Click="OnProjectSplitClicked"/>
+							<MenuItem Header="Remove all annotations" Click="OnRemoveAllAnnotationsClicked"/>
 							<Separator/>
 							<MenuItem Header="Export annotations" Click="OnExportClassesClicked" />
 							<MenuItem Header="Export project for YOLO" Click="OnExportProjectYoloClicked" />

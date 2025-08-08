@@ -13,11 +13,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using YALA.Models;
 using YALA.Services;
@@ -618,33 +620,49 @@ public partial class MainWindowViewModel : ViewModelBase
 		yoloOnnxService.LoadOnnxModel(modelPath);
 	}
 
-	public void RunYoloOnProject()
+	public void RemoveAllAnnotations()
 	{
-		if (ImagesPaths.Count > 0)
-		{
-			foreach (var imagePath in ImagesPaths)
-			{
-				string absolutePath = System.IO.Path.Join(databaseService.absolutePath, imagePath);
-				List<Detection> detections = yoloOnnxService.Detect(absolutePath);
-				if (detections.Count > 0)
-				{
-					List<BoundingBox> boundingBoxes = detections.Select(detection => new BoundingBox
-					{
-						Tlx = detection.xCenter - detection.width / 2,
-						Tly = detection.yCenter - detection.height / 2,
-						Width = detection.width,
-						Height = detection.height,
-						ClassId = detection.classId,
-						ClassName = detection.label,
-						Color = LabellingClasses.FirstOrDefault(x => x.Name == detection.label)?.Color ?? "#ffffff",
-						EditingEnabled = ResizingBoundingBoxEnabled
-					}).ToList();
-					databaseService.AddBoundingBoxListSafe(boundingBoxes, imagePath);
-				}
-			}
-			LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name)); // Class name can change so update the number of instances
-		}
+		databaseService.RemoveAllImagesBoundingBoxesFromProject();
+		CurrentImageBoundingBoxes.Clear();
 	}
+
+	public async Task RunYoloOnProjectAsync(IProgress<(double percent, bool done)> progress, double nms, double conf, CancellationToken token)
+	{
+		int total = ImagesPaths.Count;
+		for (int i = 0; i < total; i++)
+		{
+			if (token.IsCancellationRequested)
+				return; 
+			string absolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[i]);
+			List<Detection> detections = yoloOnnxService.Detect(absolutePath, nms, conf);
+			if (detections.Count > 0)
+			{
+				var boundingBoxes = detections.Select(detection => new BoundingBox
+				{
+					Tlx = detection.xCenter - detection.width / 2,
+					Tly = detection.yCenter - detection.height / 2,
+					Width = detection.width,
+					Height = detection.height,
+					ClassId = detection.classId,
+					ClassName = detection.label,
+					Color = LabellingClasses.FirstOrDefault(x => x.Name == detection.label)?.Color ?? "#ffffff",
+					EditingEnabled = ResizingBoundingBoxEnabled
+				}).ToList();
+
+				databaseService.AddBoundingBoxListSafe(boundingBoxes, ImagesPaths[i]);
+			}
+
+			progress.Report(((i + 1) * 100.0 / total, false));
+		}
+
+		LabellingClasses.ToList().ForEach(x =>x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name));
+		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+
+		progress.Report((100, true));
+	}
+
+
+
 
 	[RelayCommand]
 	private void DetectCurrentImage()

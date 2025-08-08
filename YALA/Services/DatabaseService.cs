@@ -352,4 +352,15 @@ public class DatabaseService
 		}
 		return new ObservableCollection<BoundingBox>();
 	}
+
+	public void RemoveAllImagesBoundingBoxesFromProject()
+	{
+		const string sql = @"
+		DELETE FROM Annotations;";
+
+		using var transaction = connection?.BeginTransaction();
+
+		connection?.Execute(sql, transaction);
+		transaction?.Commit();
+	}
 }
