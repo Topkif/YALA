@@ -158,7 +158,7 @@ public class DatabaseService
 		(SELECT COUNT(*) FROM Annotations WHERE ClassId = Classes.Id) AS NumberOfInstances
 		FROM 
 		Classes;").ToList();
-		if (labellingClasses != null)
+		if (labellingClasses != null && labellingClasses.Count > 0)
 		{
 			labellingClasses.First().IsSelected = true;
 			return new ObservableCollection<LabellingClass>(labellingClasses);

@@ -18,7 +18,7 @@ public class SelectedToFillBrushConverter : IMultiValueConverter
 			try
 			{
 				var color = Color.Parse(hex);
-				double opacity = 0.2; // default
+				double opacity = 1; // Opacity of selected bounding box when filled
 				if (parameter is string s && double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
 					opacity = parsed;
 

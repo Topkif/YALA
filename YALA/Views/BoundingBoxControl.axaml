@@ -33,7 +33,7 @@
                     Stroke="{Binding BoundingBox.Color, Converter={StaticResource HexToBrushConverter}, RelativeSource={RelativeSource AncestorType=local:BoundingBoxControl}}"
                     StrokeThickness="{Binding RealBoundingBoxStrokeSize, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}}">
 					<Rectangle.Fill>
-						<MultiBinding Converter="{StaticResource SelectedToFillBrushConverter}" ConverterParameter="0.2">
+						<MultiBinding Converter="{StaticResource SelectedToFillBrushConverter}" ConverterParameter="0.4">
 							<Binding Path="BoundingBox.IsSelected" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
 							<Binding Path="BoundingBox.Color" RelativeSource="{RelativeSource AncestorType=local:BoundingBoxControl}" />
 						</MultiBinding>

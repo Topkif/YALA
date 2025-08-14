@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
 using YALA.Converters;
 using YALA.Models;
+using YALA.Services;
 using YALA.ViewModels;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -57,6 +58,8 @@ public partial class MainWindow : Window
 	{
 		InitializeComponent();
 		DataContext = viewModel;
+		viewModel.ShowWarningDialogEvent += OnWarningDialogEventReceived;
+
 		viewModel.BoundingBoxesChanged += () => Dispatcher.UIThread.Post(UpdateBoundingBoxes);
 		this.Opened += (_, _) => MainFocusTarget.Focus();
 		ImageIndexTextBox.AddHandler(TextBox.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
@@ -105,7 +108,7 @@ public partial class MainWindow : Window
 		if (topLevel == null)
 			return;
 
-		var files = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+		var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
 		{
 			Title = "Create New Project Database",
 			DefaultExtension = "yala",
@@ -116,25 +119,10 @@ public partial class MainWindow : Window
 		}
 		});
 
-		if (files != null)
+		if (file != null)
 		{
-			var classFiles = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-			{
-				Title = "Select Class Names File",
-				AllowMultiple = false,
-				FileTypeFilter = new[]
-			{
-				new FilePickerFileType("Class Files") { Patterns = new[] { "*.yalac", "*.txt", "*.names" } }
-			}
-			});
-
-			// 3. If a file was selected, execute the command on the ViewModel
-			if (classFiles?.Count > 0)
-			{
-				string dbPath = files.Path.LocalPath;
-				string classesPath = classFiles[0].Path.LocalPath;
-				viewModel.CreateNewProject(dbPath, classesPath);
-			}
+			string dbPath = file.Path.LocalPath;
+			viewModel.CreateNewProject(dbPath);
 		}
 	}
 
@@ -216,7 +204,8 @@ public partial class MainWindow : Window
 				exportDialog.SelectedClasses,
 				exportDialog.TrainRatio,
 				exportDialog.ValRatio,
-				exportDialog.TestRatio
+				exportDialog.TestRatio,
+				exportDialog.GenerateDatasetYamlCheckBox.IsChecked == true ? true : false
 			);
 		}
 	}
@@ -278,26 +267,25 @@ public partial class MainWindow : Window
 		}
 	}
 
-	private async void OnAddImagesClicked(object sender, RoutedEventArgs e)
+	private async void OnImportImagesAnnotationsClicked(object sender, RoutedEventArgs e)
 	{
-		var topLevel = GetTopLevel(this);
-		if (topLevel == null)
+		if (viewModel.databaseService.connection == null || viewModel.databaseService.connection.State == System.Data.ConnectionState.Closed)
+		{
+			var dialogWarning = new WarningDialog("No Current Project", "Please open or create a project before.");
+			var resultWarning = await DialogHost.Show(dialogWarning, "RootDialog");
 			return;
-
-		var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-		{
-			Title = "Select Images or Folder",
-			AllowMultiple = true,
-			FileTypeFilter = new[]
-			{
-			new FilePickerFileType("Images") { Patterns = new[] { "*.png", "*.jpg", "*.jpeg" } }
 		}
-		});
 
-		if (files?.Count > 0)
+		var dialog = new ImportDialog(viewModel.LabellingClasses.Count>0);
+		var result = await DialogHost.Show(dialog, "RootDialog");
+		if (result is ImportDialog importDialog)
 		{
-			List<string> imagePaths = files.Select(f => f.Path.LocalPath).ToList();
-			viewModel.AddImages(imagePaths);
+			if (importDialog.classFilePath != null)
+				viewModel.databaseService.AddClassesAndColor(ClassesFileParser.GetClassNameAndColor(importDialog.classFilePath));
+			if (importDialog.imagesPaths != null)
+				viewModel.AddImages(importDialog.imagesPaths);
+			if (importDialog.annotationsPaths != null)
+				viewModel.AddAnnotations(importDialog.annotationsPaths);
 		}
 	}
 
@@ -394,9 +382,34 @@ public partial class MainWindow : Window
 		{
 			viewModel.CancelBoundingBoxDrawing();
 		}
+		else if (e.Properties.IsXButton1Pressed)
+		{
+			viewModel.PreviousImageCommand.Execute(null);
+		}
+		else if (e.Properties.IsXButton2Pressed)
+		{
+			viewModel.NextImageCommand.Execute(null);
+		}
+		else if (e.Properties.IsMiddleButtonPressed)
+		{
+			BoundingBoxesCanvas.Cursor = new Cursor(StandardCursorType.Hand);
+		}
+	}
+	private void WindowPointerReleased(object? sender, PointerReleasedEventArgs e)
+	{
+		if (IsPointerInMenu(e))
+			return;
+		if (viewModel.ResizingBoundingBoxEnabled)
+		{
+			BoundingBoxesCanvas.Cursor = new Cursor(StandardCursorType.Cross);
+		}
+		else
+		{
+			BoundingBoxesCanvas.Cursor = new Cursor(StandardCursorType.Arrow);
+		}
 	}
 
-	private bool IsPointerInMenu(PointerPressedEventArgs e)
+	private bool IsPointerInMenu(PointerEventArgs e)
 	{
 		// Walk up the visual tree from the source
 		Visual? current = e.Source as Visual;
@@ -550,4 +563,29 @@ public partial class MainWindow : Window
 		}
 
 	}
+
+	public async void OnWarningDialogEventReceived(object? sender, WarningDialogEventArgs e)
+	{
+		try
+		{
+			await Dispatcher.UIThread.InvokeAsync(async () =>
+			{
+				try
+				{
+					var dialog = new WarningDialog(e.Title, e.Content);
+					await DialogHost.Show(dialog, "RootDialog");
+				}
+				catch (Exception ex)
+				{
+					Console.Error.WriteLine($"Dialog error: {ex}");
+				}
+			});
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"Dispatcher error: {ex}");
+		}
+	}
+
+
 }

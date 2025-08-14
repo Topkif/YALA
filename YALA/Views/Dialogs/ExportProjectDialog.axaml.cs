@@ -9,6 +9,7 @@ using DialogHostAvalonia;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 
 namespace YALA.Views;
@@ -62,19 +63,32 @@ public partial class ExportProjectDialog : UserControl
 
 	private async void OnBrowseClicked(object? sender, RoutedEventArgs e)
 	{
+		try
+		{
+
 		var window = VisualRoot as Window;
 		if (window is null) return;
 
-		var file = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+		var result = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
 		{
 			Title = "Select Export Folder",
 			AllowMultiple = false
 		});
 
-		if (file != null && file.Count > 0)
-		{
-			FilePathTextBox.Text = file[0].Path.LocalPath;
+		if (result.Count == 0)
+			return; // user canceled
+
+		var folder = result[0];
+		var folderPath = folder.TryGetLocalPath();
+		if (string.IsNullOrEmpty(folderPath))
+			return;
+
+		// Create the folder if it doesn't exist
+		Directory.CreateDirectory(folderPath);
+
+		FilePathTextBox.Text = folderPath;
 		}
+		catch { }
 	}
 
 	private void OnExportClicked(object? sender, RoutedEventArgs e)

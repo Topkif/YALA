@@ -29,7 +29,8 @@ namespace YALA
                     WindowState = Avalonia.Controls.WindowState.Maximized,
                     DataContext = MainVM,
                 };
-            }
+
+			}
 
             base.OnFrameworkInitializationCompleted();
         }

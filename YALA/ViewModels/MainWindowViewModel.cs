@@ -48,9 +48,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public DatabaseService databaseService = new();
 	public YoloOnnxService yoloOnnxService = new();
+	private List<BoundingBox>? CopyOfImageBoundingBoxes;
 
 	// Force notify collection changed event when CurrentImageBoundingBoxes is changed by subscribing to the new collection
 	private NotifyCollectionChangedEventHandler? _collectionChangedHandler;
+	private bool isSelecting; // Avoid infinite loop when setting IsSelected
 	public event Action? BoundingBoxesChanged;
 	private ObservableCollection<BoundingBox> _currentImageBoundingBoxes = new();
 	public ObservableCollection<BoundingBox> CurrentImageBoundingBoxes
@@ -85,21 +87,12 @@ public partial class MainWindowViewModel : ViewModelBase
 		CurrentImageBoundingBoxes = new();
 	}
 
-	public void CreateNewProject(string dbPath, string classesPath)
+	public void CreateNewProject(string dbPath, string classesPath = "")
 	{
 		if (!databaseService.DoTablesExist(dbPath))
 		{
 			databaseService.CreateYalaTables(dbPath);
-			if (classesPath.EndsWith(".yalac"))
-			{
-				List<(string, string)> classes = ClassesFileParser.ParseYalaClassNamesAndColor(classesPath);
-				databaseService.AddClassesAndColor(classes);
-			}
-			else
-			{
-				List<string> classes = ClassesFileParser.ParseClassNames(classesPath);
-				databaseService.AddClasses(classes);
-			}
+			databaseService.AddClassesAndColor(ClassesFileParser.GetClassNameAndColor(classesPath));
 		}
 		LabellingClasses = databaseService.GetLabellingClasses();
 		ProjectName = $"YALA ({dbPath})";
@@ -125,7 +118,6 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		try
 		{
-
 			databaseService.Close();
 			if (!databaseService.DoTablesExist(dbPath))
 			{
@@ -137,7 +129,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			CurrentImageIndex = 1;
 			if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
 			{
-				CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+				CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0])); // Load the first image by default
 				CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
 			}
@@ -181,6 +173,12 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			LabellingClasses.Remove(selectedClass);
 		}
+		if (LabellingClasses.Count == 0)
+		{
+			CurrentImageBoundingBoxes.Clear();
+			selectedClass = null;
+			return;
+		}
 		LabellingClasses.First().IsSelected = true; // Select the first class by default
 		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected == true);
 	}
@@ -196,11 +194,15 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 	public void SetSelectedAnnotation(BoundingBox boundingBox, bool value)
 	{
+		if (isSelecting) return;
+
+		isSelecting = true;
 		foreach (var bb in CurrentImageBoundingBoxes)
 		{
 			bb.IsSelected = false;
 		}
 		boundingBox.IsSelected = value;
+		isSelecting = false;
 	}
 
 	public void AddImages(List<string> imagesPaths)
@@ -213,7 +215,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			databaseService.AddImages(relativePaths);
 			ImagesPaths = databaseService.GetImagesPaths();
 			CurrentImageIndex = ImagesPaths.Count;
-			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex-1]); // Load the first image by default
+			CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1])); // Load the first image by default
 			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 		}
 	}
@@ -221,24 +223,39 @@ public partial class MainWindowViewModel : ViewModelBase
 	[RelayCommand]
 	private void NextImage()
 	{
-		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		try
 		{
-			CurrentImageIndex = Math.Min(ImagesPaths.Count, CurrentImageIndex + 1);
-			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
-			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+
+			if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+			{
+				CurrentImageIndex = Math.Min(ImagesPaths.Count, CurrentImageIndex + 1);
+				CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]));
+				CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+			}
+		}
+		catch
+		{
+			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
 		}
 	}
 
 	[RelayCommand]
 	private void PreviousImage()
 	{
-		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+		try
 		{
-			CurrentImageIndex = Math.Max(1, CurrentImageIndex - 1);
-			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
-			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+			if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
+			{
+				CurrentImageIndex = Math.Max(1, CurrentImageIndex - 1);
+				CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]));
+				CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
+			}
+		}
+		catch
+		{
+			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
 		}
 	}
 
@@ -254,19 +271,26 @@ public partial class MainWindowViewModel : ViewModelBase
 				return;
 			if (CurrentImageIndex>ImagesPaths.Count)
 				CurrentImageIndex=ImagesPaths.Count;
-			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex-1]); // Load the first image by default
+			CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1])); // Load the first image by default
 			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 		}
 	}
 
 	public void GotoImage(int imageId)
 	{
-		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
+		try
 		{
-			var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count);
-			CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]);
-			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
-			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[clampedIndex - 1], ResizingBoundingBoxEnabled);
+			if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
+			{
+				var clampedIndex = Math.Clamp(imageId, 1, ImagesPaths.Count);
+				CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[clampedIndex - 1]));
+				CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[clampedIndex - 1], ResizingBoundingBoxEnabled);
+			}
+		}
+		catch
+		{
+			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
 		}
 	}
 
@@ -421,6 +445,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public void DeleteBoundingBox(BoundingBox boundingBox)
 	{
+		int index = CurrentImageBoundingBoxes.ToList().FindIndex(x => x == boundingBox);
 		if (ImagesPaths.Count > 0 && CurrentImageIndex > 0 && !string.IsNullOrWhiteSpace(ImagesPaths[CurrentImageIndex - 1]))
 		{
 			CurrentImageBoundingBoxes.Remove(boundingBox);
@@ -433,6 +458,19 @@ public partial class MainWindowViewModel : ViewModelBase
 		else
 		{
 			CurrentImageBoundingBoxes.Remove(boundingBox);
+		}
+		// If it was selected, select the next on after deletion
+		try
+		{
+			if (boundingBox.IsSelected && index != -1 && CurrentImageBoundingBoxes.Count>0)
+			{
+				index = Math.Max(1, index);
+				CurrentImageBoundingBoxes[index-1].IsSelected = true;
+			}
+		}
+		catch
+		{
+			ShowWarningDialog("Delete Bounding Box Error", "Error selecting next bounding box after deletion.\nPlease report this issue.");
 		}
 	}
 
@@ -576,9 +614,22 @@ public partial class MainWindowViewModel : ViewModelBase
 		}
 	}
 
-	public void ExportProjectYolo(string exportPath, List<string> selectedClasses, double trainRatio, double valRatio, double testRatio)
+	public void ExportProjectYolo(string exportPath, List<string> selectedClasses, double trainRatio, double valRatio, double testRatio, bool generateDatasetYaml)
 	{
-		YoloExporter.ExportProject(exportPath, databaseService, ImagesPaths.ToList(), selectedClasses, trainRatio, valRatio, testRatio);
+		if(exportPath == null || exportPath.Trim() == "")
+		{
+			ShowWarningDialog("Export Error", "Please select a valid export path.");
+			return;
+		}
+		if (selectedClasses.Count == 0)
+		{
+			ShowWarningDialog("Export Error", "Please select at least one class to export.");
+			return;
+		}
+		if(YoloExporter.ExportProject(exportPath, databaseService, ImagesPaths.ToList(), selectedClasses, trainRatio, valRatio, testRatio, generateDatasetYaml) != 0)
+		{
+			ShowWarningDialog("Export error", "Maybe an image is missing");
+		}
 
 	}
 
@@ -603,7 +654,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			if (ImagesPaths.Count > 0)
 			{
 				CurrentImageIndex = 1;
-				CurrentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0]); // Load the first image by default
+				CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[0])); // Load the first image by default
 				CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
 				CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
 			}
@@ -633,7 +684,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			if (token.IsCancellationRequested)
 				return;
-			string absolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[i]);
+			string absolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[i]));
 			List<Detection> detections = yoloOnnxService.Detect(absolutePath);
 			if (detections.Count > 0)
 			{
@@ -655,7 +706,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			progress.Report(((i + 1) * 100.0 / total, false));
 		}
 
-		LabellingClasses.ToList().ForEach(x =>x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name));
+		LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name));
 		CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
 
 		progress.Report((100, true));
@@ -665,7 +716,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		if (ImagesPaths.Count > 0)
 		{
-			string currentImageAbsolutePath = System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]);
+			string currentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]));
 			List<Detection> detections = yoloOnnxService.Detect(currentImageAbsolutePath);
 			if (detections.Count > 0)
 			{
@@ -689,5 +740,66 @@ public partial class MainWindowViewModel : ViewModelBase
 				}
 			}
 		}
+	}
+
+	public void AddAnnotations(List<string> annotationsPaths)
+	{
+		foreach (var annotationPath in annotationsPaths)
+		{
+			string relativePath = System.IO.Path.GetRelativePath(databaseService.absolutePath, annotationPath);
+			string basePath = System.IO.Path.GetFileNameWithoutExtension(relativePath);
+			int correspondingImagePathIndex = ImagesPaths.Select(x => System.IO.Path.GetFileNameWithoutExtension(x)).ToList().FindIndex(x => (x == basePath));
+			if (correspondingImagePathIndex != -1)
+			{
+				string imagePath = System.IO.Path.Combine(databaseService.absolutePath, ImagesPaths[correspondingImagePathIndex]);
+				List<BoundingBox> boundingBoxes = YoloImporter.ReadAndConvertYoloAnnotationToBoundingBox(imagePath, annotationPath, LabellingClasses.ToList(), ResizingBoundingBoxEnabled);
+				databaseService.AddBoundingBoxListSafe(boundingBoxes, ImagesPaths[correspondingImagePathIndex]);
+			}
+		}
+		if (ImagesPaths.Count > 0)
+		{
+			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1]);
+		}
+	}
+
+	[RelayCommand]
+	private void CopyCurrentImageAnnotations()
+	{
+		CopyOfImageBoundingBoxes = CurrentImageBoundingBoxes.ToList();
+	}
+
+	[RelayCommand]
+	private void PasteCurrentImageAnnotations()
+	{
+		if (CopyOfImageBoundingBoxes != null)
+		{
+			foreach (var bbox in CopyOfImageBoundingBoxes)
+			{
+				BoundingBox bboxToAdd = new()
+				{
+					Tlx = bbox.Tlx,
+					Tly = bbox.Tly,
+					Width = bbox.Width,
+					Height = bbox.Height,
+					ClassId = bbox.ClassId,
+					ClassName = bbox.ClassName,
+					Color = bbox.Color,
+					EditingEnabled = ResizingBoundingBoxEnabled
+				};
+				CurrentImageBoundingBoxes.Add(bboxToAdd);
+			}
+			if (ImagesPaths.Count > 0 && CurrentImageIndex > 0)
+			{
+				databaseService.AddBoundingBoxListSafe(CopyOfImageBoundingBoxes, ImagesPaths[CurrentImageIndex - 1]);
+			}
+		}
+	}
+
+	// Events
+	public event EventHandler<WarningDialogEventArgs>? ShowWarningDialogEvent;
+
+	public void ShowWarningDialog(string title, string message)
+	{
+		ShowWarningDialogEvent?.Invoke(this, new WarningDialogEventArgs(title, message));
 	}
 }

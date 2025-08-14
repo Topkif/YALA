@@ -6,7 +6,7 @@
 			 xmlns:local="clr-namespace:YALA.Views"
              x:Class="YALA.Views.ExportProjectDialog">
 
-	<Grid Margin="20" RowDefinitions="Auto,*,Auto" ColumnDefinitions="*,*">
+	<Grid Margin="20" RowDefinitions="Auto,*,Auto,Auto" ColumnDefinitions="*,*">
 
 		<!-- Path Selection -->
 		<StackPanel Grid.ColumnSpan="2" Margin="0,0,0,20">
@@ -46,8 +46,10 @@
 			</StackPanel>
 		</ScrollViewer>
 
+		<CheckBox x:Name="GenerateDatasetYamlCheckBox" Grid.Row="2" Grid.Column="1" Margin="0 10 0 0" Content="Generate &quot;dataset.yaml&quot;" IsChecked="True"/>
+		
 		<!-- Buttons (Bottom Right) -->
-		<StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0 10 0 0">
+		<StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0 10 0 0">
 			<Button Content="Cancel" Click="OnCancelClicked" />
 			<Button Content="Export" Click="OnExportClicked" />
 		</StackPanel>

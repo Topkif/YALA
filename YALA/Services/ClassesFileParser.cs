@@ -10,7 +10,21 @@ namespace YALA.Services;
 
 static class ClassesFileParser
 {
-	public static List<string> ParseClassNames(string filePath)
+	public static List<(string Name, string Color)> GetClassNameAndColor(string filePath)
+	{
+		if (filePath.EndsWith(".yalac"))
+		{
+			List<(string, string)> classes = ParseYalaClassNamesAndColor(filePath);
+			return classes;
+		}
+		else
+		{
+			List<string> classes = ParseClassNames(filePath);
+			return classes.Select(name => (name, "#FFFFFF")).ToList();
+		}
+	}
+
+	static List<string> ParseClassNames(string filePath)
 	{
 		var classNames = new List<string>();
 		if (!File.Exists(filePath))
@@ -26,7 +40,7 @@ static class ClassesFileParser
 		return classNames;
 	}
 
-	public static List<(string Name, string Color)> ParseYalaClassNamesAndColor(string filePath)
+	static List<(string Name, string Color)> ParseYalaClassNamesAndColor(string filePath)
 	{
 		var result = new List<(string Name, string Color)>();
 		if (!File.Exists(filePath))
