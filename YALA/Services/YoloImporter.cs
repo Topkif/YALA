@@ -35,17 +35,13 @@ public static class YoloImporter
 
 			// Convert YOLO center-normalized format to top-left format
 			var imageSize = GetImageSize(imagePath);
-
-			var tlx = (centerX - (width / 2.0)) * imageSize.Width;
-			var tly = (centerY - (height / 2.0)) * imageSize.Height;
-
-			var labellingClass = labellingClasses.FirstOrDefault(c => c.Id == classId+1); // + 1
+			LabellingClass? labellingClass = labellingClasses.FirstOrDefault(c => c.Id == classId+1); // + 1
 
 			boundingBoxes.Add(new BoundingBox
 			{
 				Id = boundingBoxes.Count,
-				Tlx = tlx,
-				Tly = tly,
+				Tlx = (centerX - (width / 2.0)) * imageSize.Width,
+				Tly = (centerY - (height / 2.0)) * imageSize.Height,
 				Width = width * imageSize.Width,
 				Height = height *imageSize.Height,
 				Color = labellingClass?.Color ?? "#FFFFFF",

@@ -68,7 +68,6 @@ public partial class MainWindow : Window
 	private void UpdateBoundingBoxes()
 	{
 		BoundingBoxesCanvas.Children.Clear();
-
 		foreach (var bbox in viewModel.CurrentImageBoundingBoxes)
 		{
 			var control = new BoundingBoxControl
@@ -151,14 +150,14 @@ public partial class MainWindow : Window
 
 	private async void OnLoadYoloModelClicked(object sender, RoutedEventArgs e)
 	{
-		if (viewModel.yoloOnnxService.modelPath != null) // If the model is not yet initialised
+		var yoloDialog = new ConfigureYoloDialog(
+			viewModel.yoloOnnxService.modelPath ?? "",
+			viewModel.yoloOnnxService.iouThreshold,
+			viewModel.yoloOnnxService.confThreshold);
+		var yoloResult = await DialogHost.Show(yoloDialog, "RootDialog");
+		if (yoloResult is ConfigureYoloDialog yoloConfig)
 		{
-			var yoloDialog = new ConfigureYoloDialog(
-				viewModel.yoloOnnxService.modelPath,
-				viewModel.yoloOnnxService.iouThreshold,
-				viewModel.yoloOnnxService.confThreshold);
-			var yoloResult = await DialogHost.Show(yoloDialog, "RootDialog");
-			if (yoloResult is ConfigureYoloDialog yoloConfig)
+			if (yoloConfig.IncomingPath != null)
 			{
 				viewModel.yoloOnnxService.LoadOnnxModel(
 					yoloConfig.IncomingPath,
@@ -312,6 +311,7 @@ public partial class MainWindow : Window
 		else if (e.Key == Key.Escape)
 		{
 			viewModel.CancelBoundingBoxDrawing();
+			viewModel.UnselectBoundingBox();
 		}
 		else if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
 		{
@@ -441,14 +441,17 @@ public partial class MainWindow : Window
 	{
 		if (viewModel.yoloOnnxService.modelPath == null) // If the model is not yet initialised
 		{
-			var yoloDialog = new ConfigureYoloDialog("", 0.45, 0.25);
+			var yoloDialog = new ConfigureYoloDialog("", viewModel.yoloOnnxService.iouThreshold, viewModel.yoloOnnxService.confThreshold);
 			var yoloResult = await DialogHost.Show(yoloDialog, "RootDialog");
 			if (yoloResult is ConfigureYoloDialog yoloConfig)
 			{
-				viewModel.yoloOnnxService.LoadOnnxModel(
-					yoloConfig.IncomingPath,
-					yoloConfig.IouThreshold,
-					yoloConfig.ConfidenceThreshold);
+				if (yoloConfig.IncomingPath != null)
+				{
+					viewModel.yoloOnnxService.LoadOnnxModel(
+						yoloConfig.IncomingPath,
+						yoloConfig.IouThreshold,
+						yoloConfig.ConfidenceThreshold);
+				}
 			}
 		}
 		viewModel.RunYoloOnImage();
@@ -457,14 +460,17 @@ public partial class MainWindow : Window
 	{
 		if (viewModel.yoloOnnxService.modelPath == null) // If the model is not yet initialised
 		{
-			var yoloDialog = new ConfigureYoloDialog("", 0.45, 0.25);
+			var yoloDialog = new ConfigureYoloDialog("", viewModel.yoloOnnxService.iouThreshold, viewModel.yoloOnnxService.confThreshold);
 			var yoloResult = await DialogHost.Show(yoloDialog, "RootDialog");
 			if (yoloResult is ConfigureYoloDialog yoloConfig)
 			{
-				viewModel.yoloOnnxService.LoadOnnxModel(
-					yoloConfig.IncomingPath,
-					yoloConfig.IouThreshold,
-					yoloConfig.ConfidenceThreshold);
+				if (yoloConfig.IncomingPath != null)
+				{
+					viewModel.yoloOnnxService.LoadOnnxModel(
+						yoloConfig.IncomingPath,
+						yoloConfig.IouThreshold,
+						yoloConfig.ConfidenceThreshold);
+				}
 			}
 		}
 

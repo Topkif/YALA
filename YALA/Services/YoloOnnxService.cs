@@ -5,6 +5,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using YALA.Models;
 
@@ -17,9 +18,9 @@ public class YoloOnnxService
 	int inputWidth;
 	int inputHeight;
 	string? inputName;
-	public double iouThreshold;
-	public double confThreshold;
-	public string modelPath;
+	public double iouThreshold = 0.45; // Default value
+	public double confThreshold = 0.25; // Default value
+	public string? modelPath;
 
 	public void LoadOnnxModel(string modelPath, double iouThreshold, double confThreshold)
 	{
@@ -71,7 +72,7 @@ public class YoloOnnxService
 		this.confThreshold = confThreshold;
 	}
 
-	public List<Detection> Detect(string imagePath)
+	public List<Detection> Detect(string imagePath, ObservableCollection<BoundingBox> currentImageBoundingBoxes)
 	{
 		try
 		{
@@ -105,7 +106,7 @@ public class YoloOnnxService
 			using var results = inferenceSession!.Run(inputs);
 			var outputTensor = results.First().AsTensor<float>();
 
-			return Postprocess(outputTensor, imageWidth, imageHeight);
+			return Postprocess(outputTensor, imageWidth, imageHeight, currentImageBoundingBoxes);
 		}
 		catch
 		{
@@ -113,7 +114,7 @@ public class YoloOnnxService
 		}
 	}
 
-	private List<Detection> Postprocess(Tensor<float> output, int imageWidth, int imageHeight)
+	private List<Detection> Postprocess(Tensor<float> output, int imageWidth, int imageHeight, ObservableCollection<BoundingBox> currentImageBoundingBoxes)
 	{
 		// Postprocessing: parse output and apply NMS
 		float invInputWidth = 1.0f / inputWidth;
@@ -126,23 +127,41 @@ public class YoloOnnxService
 
 		for (int classId = 0; classId < numClasses; classId++)
 		{
+			// Preload the current bounding boxes for this class to avoid duplicates
 			var classDetections = new List<Detection>();
+			classDetections.AddRange(currentImageBoundingBoxes.Where(b => b.ClassName == labels[classId]).Select(b => new Detection
+			{
+				tlx = (float)b.Tlx/imageWidth * inputWidth,
+				tly = (float)b.Tly/imageHeight * inputHeight,
+				width = (float)b.Width/imageWidth * inputWidth,
+				height = (float)b.Height/imageHeight * inputHeight,
+				classId = b.ClassId,
+				label = b.ClassName,
+				confidence = 1.0f // Assume existing boxes have full confidence to avoid removal
+			}));
 
 			for (int detIdx = 0; detIdx < numDetections; detIdx++)
 			{
 				float conf = output[0, 4 + classId, detIdx];
 				if (conf < confThreshold) continue;
-
+				float xCenter = output[0, 0, detIdx];
+				float yCenter = output[0, 1, detIdx];
 				var det = new Detection
 				{
-					xCenter = output[0, 0, detIdx] * invInputWidth * imageWidth,
-					yCenter = output[0, 1, detIdx] * invInputHeight * imageHeight,
-					width = output[0, 2, detIdx] * invInputWidth * imageWidth,
-					height = output[0, 3, detIdx] * invInputHeight * imageHeight,
+					width = output[0, 2, detIdx],
+					height = output[0, 3, detIdx],
+					tlx = xCenter - output[0, 2, detIdx] / 2.0f,
+					tly = yCenter - output[0, 3, detIdx] / 2.0f,
 					confidence = conf,
 					classId = classId,
 					label = labels[classId]
 				};
+				// Debugging check
+				double h = det.tly + det.height;
+				if (h > imageHeight)
+				{
+					Console.WriteLine("Error, bounding box too big");
+				}
 
 				bool shouldAdd = true;
 				var toRemove = new List<int>();
@@ -166,9 +185,19 @@ public class YoloOnnxService
 
 				if (shouldAdd) classDetections.Add(det);
 			}
+
+			// Once we have the right detections, convert them to image size, and bound them
+			foreach (Detection det in classDetections)
+			{
+				det.tlx = Math.Clamp(det.tlx, 0, inputWidth);
+				det.tly = Math.Clamp(det.tly, 0, inputHeight);
+				det.width = Math.Min(det.width, inputWidth - det.tlx) * invInputWidth * imageWidth;
+				det.height = Math.Min(det.height, inputHeight - det.tly) * invInputHeight * imageHeight;
+				det.tlx *= invInputWidth * imageWidth;
+				det.tly *= invInputHeight * imageHeight;
+			}
 			detections.AddRange(classDetections);
 		}
-
 		return detections;
 	}
 }

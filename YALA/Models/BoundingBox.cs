@@ -19,4 +19,23 @@ public partial class BoundingBox : ObservableObject
 	[ObservableProperty] string className = "";
 	[ObservableProperty] bool editingEnabled;
 	[ObservableProperty] bool isSelected;
+
+	public double CalculateIoU(BoundingBox b)
+	{
+		// Calculate intersection
+		double intersectionLeft = Math.Max(tlx, b.tlx);
+		double intersectionTop = Math.Max(tly, b.tly);
+		double intersectionRight = Math.Min(tlx + width, b.tlx + b.width);
+		double intersectionBottom = Math.Min(tly + height, b.tly + b.height);
+
+		if (intersectionLeft >= intersectionRight || intersectionTop >= intersectionBottom)
+			return 0f;
+
+		double intersectionArea = (intersectionRight - intersectionLeft) * (intersectionBottom - intersectionTop);
+		double Area = width * height;
+		double bArea = b.width * b.height;
+		double unionArea = Area + bArea - intersectionArea;
+		return intersectionArea / unionArea;
+	}
 }
+

@@ -54,7 +54,9 @@ public partial class MainWindowViewModel : ViewModelBase
 	private NotifyCollectionChangedEventHandler? _collectionChangedHandler;
 	private bool isSelecting; // Avoid infinite loop when setting IsSelected
 	public event Action? BoundingBoxesChanged;
+
 	private ObservableCollection<BoundingBox> _currentImageBoundingBoxes = new();
+	[ObservableProperty] ObservableCollection<BoundingBox> reversedCurrentImageBoundingBoxes = new();
 	public ObservableCollection<BoundingBox> CurrentImageBoundingBoxes
 	{
 		get => _currentImageBoundingBoxes;
@@ -67,7 +69,11 @@ public partial class MainWindowViewModel : ViewModelBase
 					_currentImageBoundingBoxes.CollectionChanged -= _collectionChangedHandler;
 				}
 				_currentImageBoundingBoxes = value;
-				_collectionChangedHandler = (_, _) => BoundingBoxesChanged?.Invoke();
+				_collectionChangedHandler = (_, _) =>
+				{
+					BoundingBoxesChanged?.Invoke();
+					ReversedCurrentImageBoundingBoxes = new ObservableCollection<BoundingBox>(_currentImageBoundingBoxes.Reverse());
+				};
 				_currentImageBoundingBoxes.CollectionChanged += _collectionChangedHandler;
 
 				OnPropertyChanged(nameof(CurrentImageBoundingBoxes));
@@ -237,6 +243,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		catch
 		{
 			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
+			CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+			CurrentImageBoundingBoxes.Clear();
 		}
 	}
 
@@ -256,6 +264,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		catch
 		{
 			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
+			CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+			CurrentImageBoundingBoxes.Clear();
 		}
 	}
 
@@ -291,6 +301,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		catch
 		{
 			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
+			CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+			CurrentImageBoundingBoxes.Clear();
 		}
 	}
 
@@ -590,6 +602,12 @@ public partial class MainWindowViewModel : ViewModelBase
 		newBoundingBox.Width = Math.Clamp(newWidth, 1, CurrentImageBitmap.Size.Width - newBoundingBox.Tlx);
 		newBoundingBox.Height = Math.Clamp(newHeight, 1, CurrentImageBitmap.Size.Height - newBoundingBox.Tly);
 	}
+
+	public void UnselectBoundingBox()
+	{
+		CurrentImageBoundingBoxes.ToList().ForEach(x => x.IsSelected = false);
+	}
+
 	public void CancelBoundingBoxDrawing()
 	{
 		isDrawingNewBoundingBox = false;
@@ -616,7 +634,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	public void ExportProjectYolo(string exportPath, List<string> selectedClasses, double trainRatio, double valRatio, double testRatio, bool generateDatasetYaml)
 	{
-		if(exportPath == null || exportPath.Trim() == "")
+		if (exportPath == null || exportPath.Trim() == "")
 		{
 			ShowWarningDialog("Export Error", "Please select a valid export path.");
 			return;
@@ -626,7 +644,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			ShowWarningDialog("Export Error", "Please select at least one class to export.");
 			return;
 		}
-		if(YoloExporter.ExportProject(exportPath, databaseService, ImagesPaths.ToList(), selectedClasses, trainRatio, valRatio, testRatio, generateDatasetYaml) != 0)
+		if (YoloExporter.ExportProject(exportPath, databaseService, ImagesPaths.ToList(), selectedClasses, trainRatio, valRatio, testRatio, generateDatasetYaml) != 0)
 		{
 			ShowWarningDialog("Export error", "Maybe an image is missing");
 		}
@@ -685,13 +703,14 @@ public partial class MainWindowViewModel : ViewModelBase
 			if (token.IsCancellationRequested)
 				return;
 			string absolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[i]));
-			List<Detection> detections = yoloOnnxService.Detect(absolutePath);
+			ObservableCollection<BoundingBox> thisImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[i], ResizingBoundingBoxEnabled);
+			List<Detection> detections = yoloOnnxService.Detect(absolutePath, thisImageBoundingBoxes);
 			if (detections.Count > 0)
 			{
 				var boundingBoxes = detections.Select(detection => new BoundingBox
 				{
-					Tlx = detection.xCenter - detection.width / 2,
-					Tly = detection.yCenter - detection.height / 2,
+					Tlx = detection.tlx,
+					Tly = detection.tly,
 					Width = detection.width,
 					Height = detection.height,
 					ClassId = detection.classId,
@@ -700,6 +719,7 @@ public partial class MainWindowViewModel : ViewModelBase
 					EditingEnabled = ResizingBoundingBoxEnabled
 				}).ToList();
 
+				databaseService.RemoveAllImagesBoundingBoxes(ImagesPaths[i]);
 				databaseService.AddBoundingBoxListSafe(boundingBoxes, ImagesPaths[i]);
 			}
 
@@ -717,18 +737,17 @@ public partial class MainWindowViewModel : ViewModelBase
 		if (ImagesPaths.Count > 0)
 		{
 			string currentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1]));
-			List<Detection> detections = yoloOnnxService.Detect(currentImageAbsolutePath);
+			List<Detection> detections = yoloOnnxService.Detect(currentImageAbsolutePath, CurrentImageBoundingBoxes);
 			if (detections.Count > 0)
 			{
-				// Clear existing bounding boxes
 				CurrentImageBoundingBoxes.Clear();
 				// Add new bounding boxes based on detections
 				foreach (var detection in detections)
 				{
 					var bbox = new BoundingBox
 					{
-						Tlx = detection.xCenter - detection.width / 2,
-						Tly = detection.yCenter - detection.height / 2,
+						Tlx = detection.tlx,
+						Tly = detection.tly,
 						Width = detection.width,
 						Height = detection.height,
 						ClassId = detection.classId,
@@ -738,6 +757,9 @@ public partial class MainWindowViewModel : ViewModelBase
 					};
 					CurrentImageBoundingBoxes.Add(bbox);
 				}
+				databaseService.RemoveAllImagesBoundingBoxes(ImagesPaths[CurrentImageIndex - 1]);
+				databaseService.AddBoundingBoxListSafe(CurrentImageBoundingBoxes.ToList(), ImagesPaths[CurrentImageIndex - 1]);
+				LabellingClasses.ToList().ForEach(x => x.NumberOfInstances = databaseService.GetInstancesOfClass(x.Name));
 			}
 		}
 	}

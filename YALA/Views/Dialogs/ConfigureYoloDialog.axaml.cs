@@ -14,7 +14,7 @@ public partial class ConfigureYoloDialog : UserControl
 {
 	public double IouThreshold { get; private set; }
 	public double ConfidenceThreshold { get; private set; }
-	public string IncomingPath => FilePathTextBox.Text;
+	public string ?IncomingPath => FilePathTextBox.Text;
 
 	public ConfigureYoloDialog( string modelPath, double iouThreshold, double confThreshold)
 	{
