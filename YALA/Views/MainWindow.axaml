@@ -182,7 +182,7 @@
 									<TextBlock Text="Annotations" FontWeight="Bold" FontSize="14"  VerticalAlignment="Center"/>
 									<Button Grid.Column="1" Classes="icon-button" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip.Tip="Delete All Image Annotations" Content="Trash2" Click="DeleteAllImageBoundingBox" Tag="{Binding}" />
 								</Grid>
-								<ItemsControl ItemsSource="{Binding ReversedCurrentImageBoundingBoxes}">								
+								<ItemsControl x:Name="AnnotationsItemsControl" ItemsSource="{Binding CurrentImageBoundingBoxes}">								
 									<ItemsControl.ItemTemplate>
 										<DataTemplate>
 											<ToggleButton Classes="class-button" IsChecked="{Binding IsSelected}"

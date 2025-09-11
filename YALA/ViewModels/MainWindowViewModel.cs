@@ -4,6 +4,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -23,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using YALA.Models;
 using YALA.Services;
+using YALA.Views;
 
 namespace YALA.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
@@ -56,7 +58,6 @@ public partial class MainWindowViewModel : ViewModelBase
 	public event Action? BoundingBoxesChanged;
 
 	private ObservableCollection<BoundingBox> _currentImageBoundingBoxes = new();
-	[ObservableProperty] ObservableCollection<BoundingBox> reversedCurrentImageBoundingBoxes = new();
 	public ObservableCollection<BoundingBox> CurrentImageBoundingBoxes
 	{
 		get => _currentImageBoundingBoxes;
@@ -72,7 +73,7 @@ public partial class MainWindowViewModel : ViewModelBase
 				_collectionChangedHandler = (_, _) =>
 				{
 					BoundingBoxesChanged?.Invoke();
-					ReversedCurrentImageBoundingBoxes = new ObservableCollection<BoundingBox>(_currentImageBoundingBoxes.Reverse());
+					//ReversedCurrentImageBoundingBoxes = new ObservableCollection<BoundingBox>(_currentImageBoundingBoxes.Reverse());
 				};
 				_currentImageBoundingBoxes.CollectionChanged += _collectionChangedHandler;
 
@@ -86,7 +87,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	public MainWindowViewModel()
 	{
 		// Load some default values to test
-		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+		using var stream = AssetLoader.Open(new Uri("avares://YALA/Assets/notfound2.png"));
+		CurrentImageBitmap =new Bitmap(stream);
 		LabellingClasses.Add(new LabellingClass { Id = 0, Name = "class1", Color = "#6eeb83", NumberOfInstances = 0, IsSelected = true });
 		LabellingClasses.Add(new LabellingClass { Id = 1, Name = "class2", Color = "#3654b3", NumberOfInstances = 0, IsSelected = false });
 		selectedClass = LabellingClasses.FirstOrDefault(x => x.IsSelected);
@@ -101,6 +103,10 @@ public partial class MainWindowViewModel : ViewModelBase
 			databaseService.AddClassesAndColor(ClassesFileParser.GetClassNameAndColor(classesPath));
 		}
 		LabellingClasses = databaseService.GetLabellingClasses();
+		if (LabellingClasses.Count>0)
+		{
+			LabellingClasses.First().IsSelected = true; // Select the first class by default
+		}
 		ProjectName = $"YALA ({dbPath})";
 	}
 
@@ -151,7 +157,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	private void CloseCurrentProject()
 	{
 		databaseService.Close();
-		CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+		using var stream = AssetLoader.Open(new Uri("avares://YALA/Assets/notfound2.png"));
+		CurrentImageBitmap =new Bitmap(stream);
 		CurrentImageBoundingBoxes.Clear();
 		ImagesPaths.Clear();
 		CurrentImageAbsolutePath = String.Empty;
@@ -211,6 +218,11 @@ public partial class MainWindowViewModel : ViewModelBase
 		isSelecting = false;
 	}
 
+	public void ImportClassFile(string filePath)
+	{
+		databaseService.AddClassesAndColor(ClassesFileParser.GetClassNameAndColor(filePath));
+		LabellingClasses = databaseService.GetLabellingClasses();
+	}
 	public void AddImages(List<string> imagesPaths)
 	{
 		if (databaseService?.connection?.State == System.Data.ConnectionState.Open)
@@ -243,7 +255,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		catch
 		{
 			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
-			CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+			using var stream = AssetLoader.Open(new Uri("avares://YALA/Assets/notfound2.png"));
+			CurrentImageBitmap =new Bitmap(stream);
 			CurrentImageBoundingBoxes.Clear();
 		}
 	}
@@ -264,7 +277,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		catch
 		{
 			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
-			CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+			using var stream = AssetLoader.Open(new Uri("avares://YALA/Assets/notfound2.png"));
+			CurrentImageBitmap =new Bitmap(stream);
 			CurrentImageBoundingBoxes.Clear();
 		}
 	}
@@ -301,7 +315,8 @@ public partial class MainWindowViewModel : ViewModelBase
 		catch
 		{
 			ShowWarningDialog("Error loading image", $"The image: \"{CurrentImageAbsolutePath}\" could not be loaded.\nWas the project file or image moved?");
-			CurrentImageBitmap = new Bitmap("../../../Assets/notfound.png");
+			using var stream = AssetLoader.Open(new Uri("avares://YALA/Assets/notfound2.png"));
+			CurrentImageBitmap =new Bitmap(stream);
 			CurrentImageBoundingBoxes.Clear();
 		}
 	}
@@ -520,7 +535,7 @@ public partial class MainWindowViewModel : ViewModelBase
 			// Disable editing temporarily to be able to set a bounding close to another
 			CurrentImageBoundingBoxes.ToList().ForEach(x => x.EditingEnabled = false);
 
-			if (selectedClass != null)
+			if (selectedClass != null && LabellingClasses.Any(x => x.Name == selectedClass.Name))
 			{
 				startPoint = position;
 				newBoundingBox = new BoundingBox

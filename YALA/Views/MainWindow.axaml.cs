@@ -67,6 +67,7 @@ public partial class MainWindow : Window
 
 	private void UpdateBoundingBoxes()
 	{
+		AnnotationsItemsControl.ItemsSource = viewModel.CurrentImageBoundingBoxes.Reverse();
 		BoundingBoxesCanvas.Children.Clear();
 		foreach (var bbox in viewModel.CurrentImageBoundingBoxes)
 		{
@@ -280,7 +281,7 @@ public partial class MainWindow : Window
 		if (result is ImportDialog importDialog)
 		{
 			if (importDialog.classFilePath != null)
-				viewModel.databaseService.AddClassesAndColor(ClassesFileParser.GetClassNameAndColor(importDialog.classFilePath));
+				viewModel.ImportClassFile(importDialog.classFilePath);
 			if (importDialog.imagesPaths != null)
 				viewModel.AddImages(importDialog.imagesPaths);
 			if (importDialog.annotationsPaths != null)
