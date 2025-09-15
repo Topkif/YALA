@@ -1,0 +1,1 @@
+![Sample annotations](image.png)
