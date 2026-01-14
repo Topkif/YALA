@@ -43,13 +43,11 @@ public partial class MainWindow : Window
 
 	const double boundingBoxStrokeSize = 3.0;
 	const double boundingBoxThumbSize = 30.0;
-	const double classNameSize = 18.0;
-	const double classNameMargin = 5.0;
-	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX;
-	public double RealBoundingBoxThumbSize => boundingBoxThumbSize / ZoomBorder.ZoomX;
-	public double MinusRealBoundingBoxMargin => -(RealBoundingBoxThumbSize - RealBoundingBoxStrokeSize)/ 2;
-	public double RealClassNameSize => classNameSize / ZoomBorder.ZoomX;
-	public Thickness RealClassNameMargin => new(classNameMargin / ZoomBorder.ZoomX);
+	const double classNameSize = 12.0;
+	public double RealBoundingBoxStrokeSize => boundingBoxStrokeSize / ZoomBorder.ZoomX * (MainImage.Bounds.Width/ZoomBorder.DesiredSize.Width);
+	public double RealBoundingBoxThumbSize => boundingBoxThumbSize / ZoomBorder.ZoomX * (MainImage.Bounds.Width/ZoomBorder.DesiredSize.Width);
+	public double MinusRealBoundingBoxMargin => -(RealBoundingBoxThumbSize - RealBoundingBoxStrokeSize)/ 2 * (MainImage.Bounds.Width/ZoomBorder.DesiredSize.Width);
+	public double RealClassNameSize => classNameSize / ZoomBorder.ZoomX * (MainImage.Bounds.Width/ZoomBorder.DesiredSize.Width);
 	private CancellationTokenSource? yoloCancellationToken;
 
 
