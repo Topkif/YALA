@@ -1,0 +1,137 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:YALA.Models"
+             xmlns:view="using:YALA.Views"
+			 xmlns:conv="using:YALA.Converters"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="450"
+             x:DataType="view:RemapClassesDialog"
+             x:Class="YALA.Views.RemapClassesDialog">
+
+		<UserControl.Resources>
+		<conv:HexToBrushConverter x:Key="HexToBrushConverter"/>
+		</UserControl.Resources>
+
+	<StackPanel Margin="20" Spacing="15" Width="460">
+		<TextBlock Text="Remap Class Names" FontWeight="Bold" FontSize="16"/>
+
+		<TextBlock Text="Map old class names to new class names. All annotations will be updated, and old classes will be deleted."
+		           TextWrapping="Wrap"
+		           Foreground="{DynamicResource ForegroundBrush}"
+		           Opacity="0.7"
+		           Margin="0,0,0,10"/>
+
+		<!-- Mappings List -->
+		<Border Background="{DynamicResource PanelBackgroundBrush}"
+		        CornerRadius="5"
+		        Padding="10"
+		        MaxHeight="300">
+			<ScrollViewer>
+				<StackPanel Spacing="8">
+					<Grid ColumnDefinitions="Auto,Auto,Auto,Auto">
+						<TextBlock Text="From" FontWeight="Bold" Margin="0,0,10,0"/>
+						<TextBlock Grid.Column="2" Text="To" FontWeight="Bold" Margin="0,0,10,0"/>
+					</Grid>
+
+					<ItemsControl x:Name="MappingsItemsControl" ItemsSource="{Binding Mappings}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<StackPanel Spacing="8"/>
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate DataType="models:ClassMapping">
+								<Grid ColumnDefinitions="*,Auto,*,Auto,Auto">
+									<!-- From Class ComboBox -->
+									<ComboBox Grid.Column="0"
+									          ItemsSource="{Binding AvailableClasses}"
+									          SelectedItem="{Binding FromClass}"
+									          HorizontalAlignment="Stretch"
+									          Margin="0,0,4,0">
+										<ComboBox.ItemTemplate>
+											<DataTemplate DataType="models:LabellingClass">
+												<Grid ColumnDefinitions="Auto,*">
+													<Rectangle Width="16" Height="16"
+													           Fill="{Binding Color, Converter={StaticResource HexToBrushConverter}}"
+													           Margin="0,0,8,0"/>
+													<TextBlock Grid.Column="1" Text="{Binding Name}"/>
+												</Grid>
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+
+									<!-- Arrow -->
+									<TextBlock Grid.Column="1" Text="→"
+									           FontSize="18"
+									           VerticalAlignment="Center"
+									           Margin="0,0,4,0"/>
+
+									<!-- To Class ComboBox -->
+									<ComboBox Grid.Column="2"
+									          ItemsSource="{Binding AvailableClasses}"
+									          SelectedItem="{Binding ToClass}"
+									          HorizontalAlignment="Stretch"
+									          Margin="0,0,8,0">
+										<ComboBox.ItemTemplate>
+											<DataTemplate DataType="models:LabellingClass">
+												<Grid ColumnDefinitions="Auto,*">
+													<Rectangle Width="16" Height="16"
+													           Fill="{Binding Color, Converter={StaticResource HexToBrushConverter}}"
+													           Margin="0,0,8,0"/>
+													<TextBlock Grid.Column="1" Text="{Binding Name}"/>
+												</Grid>
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+
+									<!-- Remove from project checkbox -->
+									<CheckBox Grid.Column="3"
+									          IsChecked="{Binding RemoveFromProject}"
+									          ToolTip.Tip="Remove this class from project after remapping"
+									          VerticalAlignment="Center"
+									          Margin="0,0,8,0">
+										<TextBlock Text="{Binding FromClass.Name, StringFormat='Remove {0}'}" FontSize="11"/>
+									</CheckBox>
+
+									<!-- Remove row button -->
+									<Button Grid.Column="4"
+									        Classes="icon-button"
+									        Content="Trash2"
+									        ToolTip.Tip="Remove Mapping"
+									        Click="OnRemoveMappingClicked"
+									        Tag="{Binding}"/>
+								</Grid>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</StackPanel>
+			</ScrollViewer>
+		</Border>
+
+		<!-- Add Mapping Button -->
+		<Button Classes="icon-button"
+		        Content="Plus"
+		        ToolTip.Tip="Add New Mapping"
+		        Click="OnAddMappingClicked"
+		        HorizontalAlignment="Left"/>
+
+		<!-- Validation Message -->
+		<TextBlock x:Name="ValidationMessageTextBlock"
+		           TextWrapping="Wrap"
+		           Foreground="Red"
+		           IsVisible="False"/>
+
+		<!-- Action Buttons -->
+		<StackPanel Orientation="Horizontal"
+		            HorizontalAlignment="Right"
+		            Spacing="10"
+		            Margin="0,10,0,0">
+			<Button Content="Cancel" Click="OnCancelClick"/>
+			<Button x:Name="ExecuteButton"
+			        Content="Execute"
+			        Click="OnExecuteClick"
+			        IsEnabled="False"/>
+		</StackPanel>
+	</StackPanel>
+</UserControl>

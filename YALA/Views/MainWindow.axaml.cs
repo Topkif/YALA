@@ -244,6 +244,59 @@ public partial class MainWindow : Window
 			viewModel.CreateNewClass(tuple);
 		}
 	}
+
+	private async void OnRemapClassesClicked(object sender, RoutedEventArgs e)
+	{
+		if (DataContext is not MainWindowViewModel viewModel)
+			return;
+
+		// Check if there are at least 2 classes to remap
+		if (viewModel.LabellingClasses.Count < 2)
+		{
+			var warningDialog = new WarningDialog("Error", "You need at least 2 classes to perform remapping.");
+			await DialogHost.Show(warningDialog, "RootDialog");
+			return;
+		}
+
+		var dialog = new RemapClassesDialog(viewModel.LabellingClasses);
+		var result = await DialogHost.Show(dialog, "RootDialog");
+
+		if (result is List<(int FromClassId, int ToClassId, bool RemoveFromProject)> mappings && mappings.Count > 0)
+		{
+			try
+			{
+				// Execute the remap operation
+				viewModel.databaseService.RemapClasses(mappings);
+
+				// Refresh the classes list and update UI
+				viewModel.LabellingClasses = viewModel.databaseService.GetLabellingClasses();
+
+				// Update the selected class
+				viewModel.selectedClass = viewModel.LabellingClasses.FirstOrDefault(c => c.IsSelected);
+
+				// Refresh current image annotations
+				if (!string.IsNullOrEmpty(viewModel.CurrentImageAbsolutePath))
+				{
+					viewModel.CurrentImageBoundingBoxes =
+						viewModel.databaseService.GetBoundingBoxes(
+							viewModel.CurrentImageAbsolutePath,
+							viewModel.ResizingBoundingBoxEnabled);
+				}
+
+				// Show success message
+				await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+				var successDialog = new WarningDialog("Success", $"Successfully remapped {mappings.Count} class(es).");
+				await DialogHost.Show(successDialog, "RootDialog");
+			}
+			catch (Exception ex)
+			{
+				await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+				var errorDialog = new WarningDialog("Error", $"Error remapping classes: {ex.Message}");
+				await DialogHost.Show(errorDialog, "RootDialog");
+			}
+		}
+	}
+
 	private void OnColorChanged(object sender, ColorChangedEventArgs e)
 	{
 		if (sender is ColorPicker picker && picker.DataContext is LabellingClass selectedClass)

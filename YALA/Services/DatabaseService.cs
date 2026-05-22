@@ -365,4 +365,66 @@ public class DatabaseService
 		connection?.Execute(sql, transaction);
 		transaction?.Commit();
 	}
+
+	public void RemapClasses(List<(int FromClassId, int ToClassId, bool RemoveFromProject)> mappings)
+	{
+		if (mappings == null || mappings.Count == 0)
+			return;
+
+		using var transaction = connection?.BeginTransaction();
+
+		try
+		{
+			// Resolve chained mappings (A→B, B→C becomes A→C)
+			var mappingDict = mappings.ToDictionary(m => m.FromClassId, m => m.ToClassId);
+			var resolvedMappings = new Dictionary<int, (int ToClassId, bool Remove)>();
+
+			foreach (var mapping in mappings)
+			{
+				int fromId = mapping.FromClassId;
+				int toId = mapping.ToClassId;
+
+				// Follow the chain to find the final destination
+				var visited = new HashSet<int> { fromId };
+				while (mappingDict.ContainsKey(toId) && !visited.Contains(toId))
+				{
+					visited.Add(toId);
+					toId = mappingDict[toId];
+				}
+
+				resolvedMappings[fromId] = (toId, mapping.RemoveFromProject);
+			}
+
+			// Update all annotations to point to the resolved target classes
+			const string updateAnnotationsSql = @"
+			UPDATE Annotations
+			SET ClassId = @ToClassId
+			WHERE ClassId = @FromClassId;";
+
+			foreach (var mapping in resolvedMappings)
+			{
+				connection?.Execute(updateAnnotationsSql, new
+				{
+					FromClassId = mapping.Key,
+					ToClassId = mapping.Value.ToClassId
+				}, transaction);
+			}
+
+			// Delete classes where the user opted in
+			const string deleteClassSql = "DELETE FROM Classes WHERE Id = @ClassId;";
+
+			foreach (var (fromClassId, (_, remove)) in resolvedMappings)
+			{
+				if (remove)
+					connection?.Execute(deleteClassSql, new { ClassId = fromClassId }, transaction);
+			}
+
+			transaction?.Commit();
+		}
+		catch
+		{
+			transaction?.Rollback();
+			throw;
+		}
+	}
 }

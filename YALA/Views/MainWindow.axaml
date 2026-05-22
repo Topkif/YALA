@@ -59,6 +59,8 @@
 							<MenuItem Header="Remove all (Project)" Click="OnRemoveAllAnnotationsClicked"/>
 							<MenuItem Header="Copy (Current)" Command="{Binding CopyCurrentImageAnnotationsCommand}"/>
 							<MenuItem Header="Paste" Command="{Binding PasteCurrentImageAnnotationsCommand}"/>
+							<Separator/>
+							<MenuItem Header="Remap project class names" Click="OnRemapClassesClicked"/>
 						</MenuItem>
 					</Menu>
 
