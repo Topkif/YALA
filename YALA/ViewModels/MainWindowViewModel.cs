@@ -296,7 +296,8 @@ public partial class MainWindowViewModel : ViewModelBase
 			if (CurrentImageIndex>ImagesPaths.Count)
 				CurrentImageIndex=ImagesPaths.Count;
 			CurrentImageAbsolutePath = System.IO.Path.GetFullPath(System.IO.Path.Join(databaseService.absolutePath, ImagesPaths[CurrentImageIndex - 1])); // Load the first image by default
-			CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+            CurrentImageBitmap = new Bitmap(CurrentImageAbsolutePath);
+			CurrentImageBoundingBoxes = databaseService.GetBoundingBoxes(ImagesPaths[CurrentImageIndex - 1], ResizingBoundingBoxEnabled);
 		}
 	}
 
