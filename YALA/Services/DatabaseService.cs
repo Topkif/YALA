@@ -230,7 +230,8 @@ public class DatabaseService
 	{
 		const string insertAnnotationSql = @"
 		INSERT INTO Annotations (ImageId, ClassId, Tlx, Tly, Width, Height)
-		VALUES (@ImageId, @ClassId, @Tlx, @Tly, @Width, @Height);";
+		VALUES (@ImageId, @ClassId, @Tlx, @Tly, @Width, @Height);
+		SELECT last_insert_rowid();";
 
 		using var transaction = connection?.BeginTransaction();
 
@@ -255,7 +256,8 @@ public class DatabaseService
 			if (classId is null)
 				continue; // Skip if class not found
 
-			connection!.Execute(insertAnnotationSql, new
+			boundingBox.ClassId = classId.Value;
+			boundingBox.Id = connection!.ExecuteScalar<int>(insertAnnotationSql, new
 			{
 				ImageId = imageId.Value,
 				ClassId = classId.Value,

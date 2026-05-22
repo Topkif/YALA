@@ -479,6 +479,7 @@ public partial class MainWindow : Window
 
 		if (result is bool confirmed && confirmed)
 		{
+			await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 			await RunYoloWithProgressAsync();
 		}
 	}
